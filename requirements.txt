@@ -1,7 +1,11 @@
 streamlit
 PyPDF2
+numpy
 faiss-cpu
 mistralai
-numpy
+python-docx
+Pillow
+pytesseract
+python-pptx
 mysql-connector-python
 bcrypt
