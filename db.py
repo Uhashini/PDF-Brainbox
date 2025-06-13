@@ -3,10 +3,10 @@ import bcrypt
 
 def get_connection():
     return mysql.connector.connect(
-        host="localhost",       # or "127.0.0.1"
-        user="root",
-        password="1234",
-        database="pdf_brainbox"
+        host="bezhnkjvw2gwxvvqnqju-mysql.services.clever-cloud.com",       # or "127.0.0.1"
+        user="ugcardicm5eialbx",
+        password="DEVt98edtwB0FOKFSQ16",
+        database="bezhnkjvw2gwxvvqnqju"
     )
 
 def create_user(username, password):
