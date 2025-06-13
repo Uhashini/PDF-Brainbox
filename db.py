@@ -1,12 +1,12 @@
 import mysql.connector
 import bcrypt
-
+import streamlit as st
 def get_connection():
     return mysql.connector.connect(
-        host="bezhnkjvw2gwxvvqnqju-mysql.services.clever-cloud.com",       # or "127.0.0.1"
-        user="ugcardicm5eialbx",
-        password="DEVt98edtwB0FOKFSQ16",
-        database="bezhnkjvw2gwxvvqnqju"
+        host=st.secrets["mysql"]["host"],
+        user=st.secrets["mysql"]["user"],
+        password=st.secrets["mysql"]["password"],
+        database=st.secrets["mysql"]["database"]
     )
 
 def create_user(username, password):
