@@ -27,6 +27,9 @@ email = query_params.get("email", [None])[0]
 if "authenticated" not in st.session_state:
     st.session_state.authenticated = False
 
+if "username" not in st.session_state:
+    st.session_state.username = ""
+    
 # If email is passed from Google login, log the user in
 if email and not st.session_state.authenticated:
     st.session_state.authenticated = True
@@ -72,10 +75,13 @@ if not st.session_state.authenticated:
 
 st.sidebar.write(f"👤 Logged in as: {st.session_state.username}")
 if st.sidebar.button("Logout"):
-    for key in st.session_state.keys():
-        del st.session_state[key]
-    st.query_params # clears all URL params
-    st.rerun()
+    st.session_state.authenticated = False
+    st.session_state.username = ""
+    # Redirect to root URL
+    st.markdown("""
+        <meta http-equiv="refresh" content="0;url=https://pdf-brainbox.streamlit.app/" />
+    """, unsafe_allow_html=True)
+    st.stop()
 
 # Load image from file
 logo = "logo.png"
