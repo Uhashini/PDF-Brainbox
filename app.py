@@ -72,8 +72,9 @@ if not st.session_state.authenticated:
 
 st.sidebar.write(f"👤 Logged in as: {st.session_state.username}")
 if st.sidebar.button("Logout"):
-    st.session_state.authenticated = False
-    st.session_state.username = None
+    for key in st.session_state.keys():
+        del st.session_state[key]
+    st.query_params # clears all URL params
     st.rerun()
 
 # Load image from file
