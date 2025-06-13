@@ -1,0 +1,7 @@
+streamlit
+PyPDF2
+faiss-cpu
+mistralai
+numpy
+mysql-connector-python
+bcrypt

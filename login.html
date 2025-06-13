@@ -1,0 +1,37 @@
+<!-- save as login.html and host it (e.g. on GitHub Pages or Firebase Hosting) -->
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Login with Google</title>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+    <script>
+      const firebaseConfig = {
+        apiKey: "AIzaSyDYlGv0O7QmRrBEwZ3Xu8bcNNSbcK_PMTU",
+        authDomain: "pdf-brainbox.firebaseapp.com",
+        projectId: "pdf-brainbox",
+        storageBucket: "pdf-brainbox.appspot.com",
+        messagingSenderId: "387480214651",
+        appId: "1:387480214651:web:050b59a4dfddca0becd6de",
+        measurementId: "G-KNZND09297"
+      };
+
+      firebase.initializeApp(firebaseConfig);
+
+      function login() {
+        const provider = new firebase.auth.GoogleAuthProvider();
+        firebase.auth().signInWithPopup(provider).then(result => {
+          const user = result.user;
+          // Replace with your Streamlit app URL
+          window.location.href = "https://pdf-brainbox.streamlit.app/?email=" + encodeURIComponent(user.email);
+        }).catch(error => {
+          alert("Login failed: " + error.message);
+        });
+      }
+    </script>
+  </head>
+  <body>
+    <h2>Login with Google</h2>
+    <button onclick="login()">Sign in with Google</button>
+  </body>
+</html>
