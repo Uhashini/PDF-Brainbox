@@ -9,3 +9,5 @@ pytesseract
 python-pptx
 mysql-connector-python
 bcrypt
+pyrebase4
+firebase-admin
