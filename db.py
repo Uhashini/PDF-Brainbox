@@ -16,7 +16,16 @@ def create_user(email, password):
         "returnSecureToken": True
     }
     res = requests.post(SIGNUP_URL, json=payload)
-    return res.status_code == 200
+    
+    if res.status_code == 200:
+        return True
+    else:
+        try:
+            error = res.json()["error"]["message"]
+            print("Firebase error:", error)
+        except:
+            error = "UNKNOWN_ERROR"
+        return error  # Return error message as string
 
 def verify_user(email, password):
     payload = {
@@ -25,4 +34,13 @@ def verify_user(email, password):
         "returnSecureToken": True
     }
     res = requests.post(LOGIN_URL, json=payload)
-    return res.status_code == 200
+
+    if res.status_code == 200:
+        return True
+    else:
+        try:
+            error = res.json()["error"]["message"]
+            print("Firebase error:", error)
+        except:
+            error = "UNKNOWN_ERROR"
+        return error
