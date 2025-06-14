@@ -27,6 +27,9 @@ st.set_page_config(
 query_params = st.query_params
 email = query_params.get("email", [None])[0]
 
+def fake_email(username):
+    return f"{username}@pdfbrainbox.local"
+
 # If authenticated state isn't set, default to False
 if "authenticated" not in st.session_state:
     st.session_state.authenticated = False
@@ -49,7 +52,9 @@ if not st.session_state.authenticated:
         username = st.text_input("Username")
         password = st.text_input("Password", type="password")
         if st.button("Login"):
-            if db.verify_user(username, password):
+            # Convert username to fake email
+            user_email = fake_email(username)
+            if db.verify_user(user_email, password):
                 st.success("Login successful!")
                 st.session_state.authenticated = True
                 st.session_state.username = username
@@ -70,12 +75,13 @@ if not st.session_state.authenticated:
         new_username = st.text_input("New Username")
         new_password = st.text_input("New Password", type="password")
         if st.button("Create Account"):
-            if db.create_user(new_username, new_password):
+            new_email = fake_email(new_username)
+            if db.create_user(new_email, new_password):
                 st.success("Account created! Please log in.")
             else:
                 st.error("Username already exists or error creating account.")
 
-    st.stop()  # Block access to rest of app
+    st.stop()
 
 st.sidebar.write(f"👤 Logged in as: {st.session_state.username}")
 
