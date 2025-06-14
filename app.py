@@ -16,12 +16,11 @@ from firebase_admin import credentials, firestore
 import db
 import os
 import datetime
+import json
 
-os.environ["FIREBASE_API_KEY"] = "AIzaSyDYlGv0O7QmRrBEwZ3Xu8bcNNSbcK_PMTU"
+cred_dict = json.loads(st.secrets["FIREBASE"]["service_account"])
+cred = credentials.Certificate(cred_dict)
 
-if not firebase_admin._apps:
-    cred = credentials.Certificate("serviceAccountKey.json")  # Make sure this file exists
-    firebase_admin.initialize_app(cred)
 
 db_firestore = firestore.client()
 
