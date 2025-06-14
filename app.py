@@ -13,10 +13,17 @@ import urllib.parse
 import streamlit.components.v1 as components
 import firebase_admin
 from firebase_admin import credentials, firestore
-
-import os
-os.environ["FIREBASE_API_KEY"] = "AIzaSyDYlGv0O7QmRrBEwZ3Xu8bcNNSbcK_PMTU"
 import db
+import os
+import datetime
+
+os.environ["FIREBASE_API_KEY"] = "AIzaSyDYlGv0O7QmRrBEwZ3Xu8bcNNSbcK_PMTU"
+
+if not firebase_admin._apps:
+    cred = credentials.Certificate("serviceAccountKey.json")  # Make sure this file exists
+    firebase_admin.initialize_app(cred)
+
+db_firestore = firestore.client()
 
 st.set_page_config(
     page_title="PDF Brainbox",      
@@ -169,6 +176,18 @@ def mistral_chat(user_message, is_json=False):
         )
     return chat_response.choices[0].message.content
 
+def log_pdf_upload(user_id, file_name):
+    db_firestore.collection("userActivity").document(user_id).collection("uploads").add({
+        "filename": file_name,
+        "timestamp": datetime.datetime.now()
+    })
+def log_quiz_attempt(user_id, section, score):
+    db_firestore.collection("userActivity").document(user_id).collection("quizzes").add({
+        "section": section,
+        "score": score,
+        "timestamp": datetime.datetime.now()
+    })
+
 
 # HOME PAGE
 if page == "Home":
@@ -208,7 +227,7 @@ if page == "Home":
         # Save in session state
         st.session_state.chunks = chunks
         st.session_state.index = index
-
+        log_pdf_upload(user_id=st.session_state.username, file_name=uploaded_file.name)
 
 # Q&A PAGE
 elif page == "Q&A":
