@@ -74,6 +74,7 @@ if not st.session_state.authenticated:
     st.stop()  # Block access to rest of app
 
 st.sidebar.write(f"👤 Logged in as: {st.session_state.username}")
+
 if st.sidebar.button("Logout"):
     st.session_state.authenticated = False
     st.session_state.username = ""
