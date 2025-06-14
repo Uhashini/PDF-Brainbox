@@ -3,7 +3,6 @@ from PyPDF2 import PdfReader
 import numpy as np
 import faiss
 from mistralai import Mistral
-import db
 from docx import Document
 from PIL import Image
 import pytesseract
@@ -14,6 +13,10 @@ import urllib.parse
 import streamlit.components.v1 as components
 import firebase_admin
 from firebase_admin import credentials, firestore
+
+import os
+os.environ["FIREBASE_API_KEY"] = "AIzaSyDYlGv0O7QmRrBEwZ3Xu8bcNNSbcK_PMTU"
+import db
 
 st.set_page_config(
     page_title="PDF Brainbox",      
