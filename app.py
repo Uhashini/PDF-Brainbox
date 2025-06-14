@@ -21,14 +21,28 @@ import json
 cred_dict = json.loads(st.secrets["FIREBASE"]["service_account"])
 cred = credentials.Certificate(cred_dict)
 
+if not firebase_admin._apps:
+    firebase_admin.initialize_app(cred)
 
 db_firestore = firestore.client()
+
+def test_firestore_connection():
+    try:
+        db_firestore.collection("testCollection").document("testDoc").set({
+            "message": "hello from Streamlit",
+            "time": datetime.datetime.now()
+        })
+        st.success("Firestore write successful ✅")
+    except Exception as e:
+        st.error(f"Firestore error: {e}")
 
 st.set_page_config(
     page_title="PDF Brainbox",      
     page_icon="logo.png",           #favicon
     initial_sidebar_state="auto"    #sidebar behavior
 )
+
+test_firestore_connection()
 
 query_params = st.query_params
 email = query_params.get("email", [None])[0]
