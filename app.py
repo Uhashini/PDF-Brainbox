@@ -228,6 +228,7 @@ if page == "Home":
         st.session_state.chunks = chunks
         st.session_state.index = index
         log_pdf_upload(user_id=st.session_state.username, file_name=uploaded_file.name)
+        db_firestore.collection("test").add({"msg": "Hello from Streamlit!"})
 
 # Q&A PAGE
 elif page == "Q&A":
