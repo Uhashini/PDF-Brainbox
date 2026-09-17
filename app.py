@@ -49,7 +49,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Custom Design System (CSS Badges, Glassmorphism, Modern Cards)
+# Custom Design System (Clean Glassmorphism & Professional Badge System)
 st.markdown("""
 <style>
 /* Modern Glassmorphism & UI Styling */
@@ -133,7 +133,7 @@ if email and not st.session_state.authenticated:
 # Authentication UI
 if not st.session_state.authenticated:
     st.title("Login to PDF Brainbox")
-    tab1, tab2 = st.tabs([" Login", " Signup"])
+    tab1, tab2 = st.tabs(["Login", "Signup"])
 
     with tab1:
         username = st.text_input("Username")
@@ -169,7 +169,7 @@ if not st.session_state.authenticated:
 
     st.stop()
 
-st.sidebar.write(f"👤 **User:** {st.session_state.username}")
+st.sidebar.write(f"User: **{st.session_state.username}**")
 
 if st.sidebar.button("Logout"):
     st.session_state.authenticated = False
@@ -189,24 +189,24 @@ with col1:
 
 with col2:
     st.markdown("<h1 style='margin: 0; padding-top: 10px;'>PDF Brainbox</h1>", unsafe_allow_html=True)
-    st.caption("🚀 Intelligent RAG Platform powered by Hybrid Search, LLM Evaluation & Knowledge Graphs")
+    st.caption("Intelligent RAG Platform powered by Hybrid Search, LLM Evaluation & Knowledge Graphs")
 
-# Synchronized Navigation Bar (Top Bar & Sidebar Selector)
+# Clean Navigation Bar (No emojis)
 tool_map = {
-    "🏠 Home": "Home",
-    "🤖 Q&A": "Q&A",
-    "📊 Analytics & Graph": "Analytics & Graph",
-    "🏆 RAG Benchmark": "RAG Benchmark",
-    "🔍 Compare Docs": "Compare Documents",
-    "🎯 Quiz": "Quiz",
-    "📊 Slides": "Slides",
-    "📝 Notes": "Notes",
-    "🎴 Flashcards": "Flashcards"
+    "Home": "Home",
+    "Q&A": "Q&A",
+    "Analytics & Graph": "Analytics & Graph",
+    "RAG Benchmark": "RAG Benchmark",
+    "Compare Docs": "Compare Documents",
+    "Quiz": "Quiz",
+    "Slides": "Slides",
+    "Notes": "Notes",
+    "Flashcards": "Flashcards"
 }
 tool_labels = list(tool_map.keys())
 
 if "current_tool" not in st.session_state:
-    st.session_state.current_tool = "🏠 Home"
+    st.session_state.current_tool = "Home"
 
 # Top Navigation Bar
 st.markdown("---")
@@ -265,6 +265,33 @@ def extract_text_from_file(file):
 
     else:
         return ""
+
+# JSON Parsing Helper
+import re
+
+def safe_parse_json(text_content):
+    if not isinstance(text_content, str):
+        return text_content
+    clean_text = text_content.strip()
+    clean_text = re.sub(r"^```(?:json)?", "", clean_text, flags=re.MULTILINE)
+    clean_text = re.sub(r"```$", "", clean_text, flags=re.MULTILINE).strip()
+    try:
+        return json.loads(clean_text)
+    except Exception:
+        pass
+    sb, eb = clean_text.find('['), clean_text.rfind(']')
+    if sb != -1 and eb > sb:
+        try:
+            return json.loads(clean_text[sb:eb + 1])
+        except Exception:
+            pass
+    sb, eb = clean_text.find('{'), clean_text.rfind('}')
+    if sb != -1 and eb > sb:
+        try:
+            return json.loads(clean_text[sb:eb + 1])
+        except Exception:
+            pass
+    raise ValueError(f"Could not parse JSON output: {text_content[:150]}")
 
 # Mistral API Configuration & Dual SDK Compatibility Wrapper (v1 & v0)
 def get_api_key():
@@ -364,14 +391,14 @@ def get_text_embedding(txt):
     try:
         return unified_mistral.get_embedding(txt)
     except Exception as e:
-        st.error(f"⚠️ Mistral Embedding API Error: {e}. Check API Key or limits on console.mistral.ai.")
+        st.error(f"Mistral Embedding API Error: {e}. Check API Key or limits on console.mistral.ai.")
         st.stop()
 
 def mistral_chat(user_message, is_json=False):
     try:
         return unified_mistral.chat_complete(user_message)
     except Exception as e:
-        return f"⚠️ Mistral Chat API Error: {e}"
+        return f"Mistral Chat API Error: {e}"
 
 def log_pdf_upload(user_id, file_name):
     if db_firestore:
@@ -394,7 +421,7 @@ if uploaded_files:
             doc_summaries = []
             
             for file in uploaded_files:
-                st.write(f"📄 Processing `{file.name}`...")
+                st.write(f"Processing `{file.name}`...")
                 text = extract_text_from_file(file)
                 if text.strip():
                     chunk_size = 512
@@ -414,7 +441,7 @@ if uploaded_files:
                     log_pdf_upload(user_id=st.session_state.username, file_name=file.name)
             
             if all_chunks:
-                st.write("🧠 Generating embeddings & indexing...")
+                st.write("Generating embeddings & indexing...")
                 text_embeddings = np.array([get_text_embedding(c) for c in all_chunks])
                 d = text_embeddings.shape[1]
                 index = faiss.IndexFlatL2(d)
@@ -431,94 +458,94 @@ if uploaded_files:
                 st.session_state.uploaded_sig = current_sig
                 st.session_state.doc_name = uploaded_files[0].name if len(uploaded_files) == 1 else f"{len(uploaded_files)} Documents"
                 
-                status.update(label=f"✅ Indexed {len(uploaded_files)} Doc(s) ({len(all_chunks)} chunks)", state="complete")
+                status.update(label=f"Indexed {len(uploaded_files)} Doc(s) ({len(all_chunks)} chunks)", state="complete")
 
 # Display Active Documents in Sidebar
 if "doc_summaries" in st.session_state and st.session_state.doc_summaries:
     st.sidebar.markdown("---")
-    st.sidebar.markdown(f"📚 **Indexed Documents ({len(st.session_state.doc_summaries)}):**")
+    st.sidebar.markdown(f"**Indexed Documents ({len(st.session_state.doc_summaries)}):**")
     for doc in st.session_state.doc_summaries:
         st.sidebar.caption(f"• `{doc['File Name']}` ({doc['Chunks']} chunks)")
 
 # HOME PAGE
 if page == "Home":
-    st.title("📄 Document Indexing & RAG Dashboard")
-    st.markdown("💡 **Tip:** Upload **single or multiple documents** anytime in the sidebar on **ANY page**!")
+    st.title("Document Indexing & RAG Dashboard")
+    st.markdown("Tip: Upload single or multiple documents anytime in the sidebar on ANY page.")
 
     if "doc_summaries" in st.session_state and st.session_state.doc_summaries:
-        st.subheader("🗃️ Active Indexed Documents")
+        st.subheader("Active Indexed Documents")
         st.dataframe(st.session_state.doc_summaries, use_container_width=True)
 
-        st.success(f"✅ Total **{len(st.session_state.chunks)} chunks** indexed across **{len(st.session_state.doc_summaries)} document(s)** using Dense FAISS & Sparse BM25!")
-        st.subheader("📄 Extracted Text Preview")
+        st.success(f"Total **{len(st.session_state.chunks)} chunks** indexed across **{len(st.session_state.doc_summaries)} document(s)** using Dense FAISS & Sparse BM25.")
+        st.subheader("Extracted Text Preview")
         st.code(st.session_state.full_text[:1000] + "...")
     else:
-        st.info("👈 Upload your PDF, DOCX, TXT, or Image files using the sidebar to start indexing!")
+        st.info("Upload your PDF, DOCX, TXT, or Image files using the sidebar to start indexing.")
 
     st.markdown("---")
-    st.subheader("🛠️ Explore AI Tools & Features")
+    st.subheader("Explore AI Tools & Features")
     col_t1, col_t2, col_t3 = st.columns(3)
 
     with col_t1:
-        st.markdown("#### 🤖 Document Q&A")
+        st.markdown("#### Document Q&A")
         st.caption("Ask questions with Hybrid Search (BM25 + FAISS RRF) & RAG Triad Diagnostics.")
-        if st.button("Launch Q&A Engine ➔", use_container_width=True):
-            st.session_state.current_tool = "🤖 Q&A"
+        if st.button("Launch Q&A Engine ->", use_container_width=True):
+            st.session_state.current_tool = "Q&A"
             st.rerun()
 
-        st.markdown("#### 🔍 Compare Documents")
+        st.markdown("#### Compare Documents")
         st.caption("Upload a second PDF to calculate Semantic Overlap % & topic divergence.")
-        if st.button("Compare 2 PDFs ➔", use_container_width=True):
-            st.session_state.current_tool = "🔍 Compare Docs"
+        if st.button("Compare 2 PDFs ->", use_container_width=True):
+            st.session_state.current_tool = "Compare Docs"
             st.rerun()
 
-        st.markdown("#### 📝 Study Notes")
+        st.markdown("#### Study Notes")
         st.caption("Generate structured bulleted study notes & download as Markdown.")
-        if st.button("Generate Notes ➔", use_container_width=True):
-            st.session_state.current_tool = "📝 Notes"
+        if st.button("Generate Notes ->", use_container_width=True):
+            st.session_state.current_tool = "Notes"
             st.rerun()
 
     with col_t2:
-        st.markdown("#### 📊 Analytics & Graph")
+        st.markdown("#### Analytics & Graph")
         st.caption("Extract Flesch Readability statistics & 2D/3D physics Knowledge Graphs.")
-        if st.button("Launch Analytics & Graph ➔", use_container_width=True):
-            st.session_state.current_tool = "📊 Analytics & Graph"
+        if st.button("Launch Analytics & Graph ->", use_container_width=True):
+            st.session_state.current_tool = "Analytics & Graph"
             st.rerun()
 
-        st.markdown("#### 🎯 Interactive Quiz")
+        st.markdown("#### Interactive Quiz")
         st.caption("Auto-generate multiple choice quizzes from document content.")
-        if st.button("Start Quiz ➔", use_container_width=True):
-            st.session_state.current_tool = "🎯 Quiz"
+        if st.button("Start Quiz ->", use_container_width=True):
+            st.session_state.current_tool = "Quiz"
             st.rerun()
 
-        st.markdown("#### 📊 Presentation Slides")
+        st.markdown("#### Presentation Slides")
         st.caption("Generate presentation outlines & download directly as PowerPoint (.pptx).")
-        if st.button("Generate Slides ➔", use_container_width=True):
-            st.session_state.current_tool = "📊 Slides"
+        if st.button("Generate Slides ->", use_container_width=True):
+            st.session_state.current_tool = "Slides"
             st.rerun()
 
     with col_t3:
-        st.markdown("#### 🏆 RAG Benchmark")
+        st.markdown("#### RAG Benchmark")
         st.caption("View real-time evaluation logs, Faithfulness metrics, & Latency charts.")
-        if st.button("View Telemetry Dashboard ➔", use_container_width=True):
-            st.session_state.current_tool = "🏆 RAG Benchmark"
+        if st.button("View Telemetry Dashboard ->", use_container_width=True):
+            st.session_state.current_tool = "RAG Benchmark"
             st.rerun()
 
-        st.markdown("#### 🎴 3D Study Flashcards")
+        st.markdown("#### Study Flashcards")
         st.caption("Interactive 3D CSS flip flashcards & Anki CSV Deck Exporter.")
-        if st.button("Study Flashcards ➔", use_container_width=True):
-            st.session_state.current_tool = "🎴 Flashcards"
+        if st.button("Study Flashcards ->", use_container_width=True):
+            st.session_state.current_tool = "Flashcards"
             st.rerun()
 
 # Q&A PAGE
 elif page == "Q&A":
-    st.title("🤖 Advanced Question Answering Engine")
+    st.title("Advanced Question Answering Engine")
     st.markdown("Powered by **Hybrid Search (BM25 + FAISS RRF)**, **Agentic Multi-Query Expansion**, **Semantic Caching**, and **LLM Evaluation**.")
 
     if "chunks" not in st.session_state or "hybrid_retriever" not in st.session_state:
-        st.warning("⚠️ Please upload a document on the **Home** page first.")
+        st.warning("Please upload a document in the sidebar to get started.")
     else:
-        with st.expander("⚙️ Advanced Retrieval & Search Controls", expanded=False):
+        with st.expander("Advanced Retrieval & Search Controls", expanded=False):
             col_m1, col_m2 = st.columns(2)
             with col_m1:
                 retrieval_mode = st.radio(
@@ -526,7 +553,7 @@ elif page == "Q&A":
                     ["Hybrid (FAISS + BM25 + RRF)", "Dense Vector (FAISS)", "Sparse Keyword (BM25)"]
                 )
                 st.session_state.retrieval_mode = retrieval_mode
-                enable_multi_query = st.checkbox("🤖 Enable Agentic Multi-Query Expansion", value=False)
+                enable_multi_query = st.checkbox("Enable Agentic Multi-Query Expansion", value=False)
             with col_m2:
                 top_k = st.slider("Top Chunks Retrieved ($k$)", 1, 5, 3)
 
@@ -547,7 +574,7 @@ elif page == "Q&A":
                     </div>
                     """
                     st.markdown(badge_html, unsafe_allow_html=True)
-                    st.caption(f"⏱️ **Latency:** `{ev['latency_sec']}s` | Strategy: `{ev.get('mode', 'Hybrid')}`")
+                    st.caption(f"Latency: `{ev['latency_sec']}s` | Strategy: `{ev.get('mode', 'Hybrid')}`")
 
         if question := st.chat_input("Ask a question about the document..."):
             with st.chat_message("user"):
@@ -564,21 +591,19 @@ elif page == "Q&A":
                 latency = round(time.time() - t_start, 4)
                 with st.chat_message("assistant"):
                     st.markdown(ans)
-                    st.markdown(f'<span class="badge-cache">⚡ Semantic Cache Hit (Similarity: {cached_res["similarity"]:.3f}) — Latency: {latency}s</span>', unsafe_allow_html=True)
+                    st.markdown(f'<span class="badge-cache">Semantic Cache Hit (Similarity: {cached_res["similarity"]:.3f}) — Latency: {latency}s</span>', unsafe_allow_html=True)
                 st.session_state.messages.append({"role": "assistant", "content": ans})
             else:
-                # 2. Agentic Multi-Query Expansion or Single Query Retrieval
                 query_list = [question]
                 if enable_multi_query:
-                    with st.spinner("🤖 Agentic Multi-Query Expansion generating variations..."):
+                    with st.spinner("Agentic Multi-Query Expansion generating variations..."):
                         variations = MultiQueryExpander.expand_query(question, mistral_chat)
                         query_list = [question] + variations
-                        st.info(f"💡 **Generated Query Variations:** {variations}")
+                        st.info(f"Generated Query Variations: {variations}")
 
                 mode_key = "hybrid" if "Hybrid" in retrieval_mode else ("sparse" if "Sparse" in retrieval_mode else "dense")
                 t_ret_start = time.time()
                 
-                # Retrieve & fuse chunks across all queries
                 all_chunks = []
                 for q in query_list:
                     q_emb = get_text_embedding(q)
@@ -590,7 +615,6 @@ elif page == "Q&A":
                     )
                     all_chunks.extend(ret_chunks)
                 
-                # Deduplicate chunks maintaining order
                 seen = set()
                 retrieved_chunks = [c for c in all_chunks if not (c in seen or seen.add(c))][:top_k * 2]
                 t_retrieval = time.time() - t_ret_start
@@ -610,7 +634,6 @@ Answer:
                 t_generation = time.time() - t_gen_start
                 total_latency = round(time.time() - t_start, 2)
 
-                # 3. LLM-as-a-Judge RAG Triad Evaluation
                 eval_metrics = RAGDiagnostics.evaluate(
                     query=question,
                     context=context,
@@ -629,7 +652,7 @@ Answer:
                 with st.chat_message("assistant"):
                     st.markdown(answer)
 
-                    with st.expander("🔍 RAG Diagnostics & Evaluation Metrics", expanded=True):
+                    with st.expander("RAG Diagnostics & Evaluation Metrics", expanded=True):
                         st.markdown(f"""
                         <div style="margin-bottom: 12px;">
                           <span class="badge-triad">Triad Score: {eval_metrics['triad_score']} / 1.0</span>
@@ -639,22 +662,22 @@ Answer:
                         </div>
                         """, unsafe_allow_html=True)
                         st.markdown(f"**Evaluator Feedback:** *\"{eval_metrics['reasoning']}\"*")
-                        st.caption(f"⏱️ **Latency Split:** Total `{total_latency}s` (Retrieval `{round(t_retrieval,3)}s` + Generation `{round(t_generation,3)}s`) | Strategy: `{eval_metrics['mode']}`")
+                        st.caption(f"Latency Split: Total `{total_latency}s` (Retrieval `{round(t_retrieval,3)}s` + Generation `{round(t_generation,3)}s`) | Strategy: `{retrieval_mode}`")
 
                 st.session_state.messages.append({"role": "assistant", "content": answer, "eval": eval_metrics})
 
 # ANALYTICS & KNOWLEDGE GRAPH PAGE
 elif page == "Analytics & Graph":
-    st.title("📊 Document Analytics & Knowledge Graph")
+    st.title("Document Analytics & Knowledge Graph")
     st.markdown("Extract structural NLP insights, readability indices, and interactive entity relation maps.")
 
     if "full_text" not in st.session_state:
-        st.warning("⚠️ Please upload a document on the **Home** page first.")
+        st.warning("Please upload a document in the sidebar to get started.")
     else:
         text = st.session_state.full_text
 
         stats = DocumentAnalytics.compute_stats(text)
-        st.subheader("📈 Readability & Lexical Metrics")
+        st.subheader("Readability & Lexical Metrics")
 
         m1, m2, m3, m4 = st.columns(4)
         m1.metric("Word Count", stats["num_words"])
@@ -663,7 +686,7 @@ elif page == "Analytics & Graph":
         m4.metric("Flesch Reading Ease", f"{stats['reading_ease']} / 100")
 
         st.markdown("---")
-        st.subheader("🕸️ Concept Knowledge Graph")
+        st.subheader("Concept Knowledge Graph")
         st.markdown("Extracting Entity-Relationship triples to map key document concepts.")
 
         if st.button("Generate Concept Knowledge Graph") or "knowledge_triples" in st.session_state:
@@ -736,13 +759,13 @@ elif page == "Analytics & Graph":
             </html>
             """
 
-            st.write("### 🌐 Interactive 2D/3D Graph Physics Network")
-            st.caption("💡 *Drag nodes around, click concepts, and scroll to zoom in/out.*")
+            st.write("### Interactive 2D/3D Graph Physics Network")
+            st.caption("Drag nodes around, click concepts, and scroll to zoom in/out.")
             components.html(vis_html, height=470)
 
 # RAG BENCHMARK PAGE
 elif page == "RAG Benchmark":
-    st.title("🏆 RAG Evaluation Benchmark Dashboard")
+    st.title("RAG Evaluation Benchmark Dashboard")
     st.markdown("Quantitative telemetry dashboard tracking real-time evaluation logs across queries.")
 
     if not st.session_state.eval_history:
@@ -755,7 +778,7 @@ elif page == "RAG Benchmark":
         avg_prec = round(np.mean([h["context_precision"] for h in history]), 2)
         avg_lat = round(np.mean([h["latency_sec"] for h in history]), 2)
 
-        st.subheader("📊 Session Average Metrics")
+        st.subheader("Session Average Metrics")
         b1, b2, b3, b4, b5 = st.columns(5)
         b1.metric("Overall Triad Score", f"{avg_triad} / 1.0")
         b2.metric("Faithfulness", avg_faith)
@@ -764,7 +787,7 @@ elif page == "RAG Benchmark":
         b5.metric("Avg Latency", f"{avg_lat}s")
 
         st.markdown("---")
-        st.subheader("📈 Telemetry Visual Analytics")
+        st.subheader("Telemetry Visual Analytics")
         
         chart_data = {
             "Faithfulness": [h["faithfulness"] for h in history],
@@ -783,7 +806,7 @@ elif page == "RAG Benchmark":
         st.line_chart(latency_data)
 
         st.markdown("---")
-        st.subheader("📋 Query Telemetry Log")
+        st.subheader("Query Telemetry Log")
         log_table = []
         for h in history:
             log_table.append({
@@ -799,17 +822,17 @@ elif page == "RAG Benchmark":
 
 # COMPARE DOCUMENTS PAGE
 elif page == "Compare Documents":
-    st.title("🔍 Multi-Document Comparison & Semantic Similarity")
+    st.title("Multi-Document Comparison & Semantic Similarity")
     st.markdown("Compare two documents side-by-side to compute embedding cosine similarity, shared topics, and comparative Q&A.")
 
     if "full_text" not in st.session_state or "embeddings" not in st.session_state:
-        st.warning("⚠️ Please upload your primary document on the **Home** page first.")
+        st.warning("Please upload your primary document in the sidebar to get started.")
     else:
         text_a = st.session_state.full_text
         embeddings_a = st.session_state.embeddings
         doc_a_name = st.session_state.get("doc_name", "Primary Document")
 
-        st.info(f"📄 **Document A:** `{doc_a_name}` (Indexed)")
+        st.info(f"**Document A:** `{doc_a_name}` (Indexed)")
 
         uploaded_b = st.file_uploader("Upload Second Document (Document B)", type=["pdf", "docx", "txt"])
 
@@ -821,10 +844,9 @@ elif page == "Compare Documents":
                     chunks_b = [text_b[i:i+chunk_size] for i in range(0, len(text_b), chunk_size)]
                     embeddings_b = np.array([get_text_embedding(c) for c in chunks_b])
 
-                # 1. Compute Semantic Similarity %
                 sim_score = MultiDocumentComparator.compute_similarity(embeddings_a, embeddings_b)
 
-                st.subheader("📊 Document Similarity Metrics")
+                st.subheader("Document Similarity Metrics")
                 c1, c2 = st.columns(2)
                 c1.metric("Semantic Overlap", f"{sim_score}%")
                 if sim_score > 75:
@@ -835,7 +857,7 @@ elif page == "Compare Documents":
                     c2.warning("Distinct/Divergent Content")
 
                 st.markdown("---")
-                st.subheader("🔍 Comparative Topic Extraction")
+                st.subheader("Comparative Topic Extraction")
                 if st.button("Extract Shared & Unique Topics") or "topic_comparison" in st.session_state:
                     if "topic_comparison" not in st.session_state:
                         with st.spinner("Comparing concepts across documents..."):
@@ -846,24 +868,24 @@ elif page == "Compare Documents":
 
                     tc1, tc2, tc3 = st.columns(3)
                     with tc1:
-                        st.markdown("### 🤝 Shared Topics")
+                        st.markdown("### Shared Topics")
                         for t in comp.get("shared_topics", []):
                             st.write(f"- {t}")
                     with tc2:
-                        st.markdown(f"### 📄 Unique to {doc_a_name}")
+                        st.markdown(f"### Unique to {doc_a_name}")
                         for t in comp.get("unique_to_doc_a", []):
                             st.write(f"- {t}")
                     with tc3:
-                        st.markdown(f"### 📄 Unique to {uploaded_b.name}")
+                        st.markdown(f"### Unique to {uploaded_b.name}")
                         for t in comp.get("unique_to_doc_b", []):
                             st.write(f"- {t}")
 
 # QUIZ PAGE
 elif page == "Quiz":
-    st.title("🎯 Quiz from Document")
+    st.title("Quiz from Document")
 
     if "chunks" not in st.session_state:
-        st.warning("⚠️ Please upload a document on the **Home** page first.")
+        st.warning("Please upload a document in the sidebar to get started.")
     else:
         chunks = st.session_state.chunks
         full_text = " ".join(chunks)
@@ -914,19 +936,19 @@ Only return valid JSON without markdown codeblocks:
                     selected = st.session_state.quiz_answers[f"q_{i}"]["selected"]
                     correct = st.session_state.quiz_answers[f"q_{i}"]["correct"]
                     if selected == correct:
-                        st.success(f"✔️ Q{i+1}: Correct")
+                        st.success(f"Correct - Q{i+1}")
                         correct_count += 1
                     else:
-                        st.error(f"❌ Q{i+1}: Incorrect (Correct: {correct})")
+                        st.error(f"Incorrect - Q{i+1} (Correct: {correct})")
 
                 st.progress(correct_count / len(quiz_data))
                 st.info(f"Score: {correct_count} / {len(quiz_data)}")
 
 # NOTES PAGE
 elif page == "Notes":
-    st.title("📝 Automated Study Notes")
+    st.title("Automated Study Notes")
     if "chunks" not in st.session_state:
-        st.warning("⚠️ Upload a document on the **Home** page first.")
+        st.warning("Please upload a document in the sidebar to get started.")
     else:
         full_text = " ".join(st.session_state.chunks)
         if st.button("Generate Study Notes") or "generated_notes" in st.session_state:
@@ -943,14 +965,14 @@ Include key definitions and core summary points.
             st.markdown(notes)
             
             c1, c2 = st.columns(2)
-            c1.download_button("📥 Download Notes (.txt)", notes, file_name="study_notes.txt", mime="text/plain")
-            c2.download_button("📥 Download Markdown (.md)", notes, file_name="study_notes.md", mime="text/markdown")
+            c1.download_button("Download Notes (.txt)", notes, file_name="study_notes.txt", mime="text/plain")
+            c2.download_button("Download Markdown (.md)", notes, file_name="study_notes.md", mime="text/markdown")
 
 # SLIDES PAGE
 elif page == "Slides":
-    st.title("📊 Presentation Slides Generator")
+    st.title("Presentation Slides Generator")
     if "chunks" not in st.session_state:
-        st.warning("⚠️ Upload a document on the **Home** page first.")
+        st.warning("Please upload a document in the sidebar to get started.")
     else:
         full_text = " ".join(st.session_state.chunks)
         if st.button("Generate Presentation Outline") or "generated_slides_text" in st.session_state:
@@ -986,13 +1008,13 @@ Format slide titles clearly separated by double newlines.
 
             pptx_file_path = generate_pptx_from_text(slides_text)
             with open(pptx_file_path, "rb") as f:
-                st.download_button("📥 Download Presentation (.pptx)", f, file_name="presentation.pptx")
+                st.download_button("Download Presentation (.pptx)", f, file_name="presentation.pptx")
 
 # FLASHCARDS PAGE
 elif page == "Flashcards":
-    st.title("🎴 Interactive 3D Study Flashcards")
+    st.title("Interactive 3D Study Flashcards")
     if "chunks" not in st.session_state:
-        st.warning("⚠️ Upload a document on the **Home** page first.")
+        st.warning("Please upload a document in the sidebar to get started.")
     else:
         full_text = " ".join(st.session_state.chunks)
         if st.button("Generate Flashcards") or "flashcards" in st.session_state:
@@ -1076,12 +1098,12 @@ Text:
             <div class="flip-card">
               <div class="flip-card-inner">
                 <div class="flip-card-front">
-                  <h3 style="margin:0; color:#60a5fa;">💡 Question</h3>
+                  <h3 style="margin:0; color:#60a5fa;">Question</h3>
                   <p style="font-size:1.1rem; font-weight:500;">{card['question']}</p>
                   <small style="color:#94a3b8;">(Hover or tap to reveal answer)</small>
                 </div>
                 <div class="flip-card-back">
-                  <h3 style="margin:0; color:#34d399;">✨ Answer</h3>
+                  <h3 style="margin:0; color:#34d399;">Answer</h3>
                   <p style="font-size:1.1rem;">{card['answer']}</p>
                 </div>
               </div>
@@ -1100,7 +1122,7 @@ Text:
             anki_csv_bytes = csv_buffer.getvalue()
 
             st.download_button(
-                "📥 Download Anki Deck (.csv)", 
+                "Download Anki Deck (.csv)", 
                 anki_csv_bytes, 
                 file_name="pdf_brainbox_anki_deck.csv", 
                 mime="text/csv"
@@ -1108,10 +1130,10 @@ Text:
 
             col1, col2 = st.columns(2)
             with col1:
-                if st.button("⬅️ Previous") and st.session_state.flashcard_index > 0:
+                if st.button("Previous") and st.session_state.flashcard_index > 0:
                     st.session_state.flashcard_index -= 1
                     st.rerun()
             with col2:
-                if st.button("➡️ Next") and st.session_state.flashcard_index < len(flashcards) - 1:
+                if st.button("Next") and st.session_state.flashcard_index < len(flashcards) - 1:
                     st.session_state.flashcard_index += 1
                     st.rerun()
