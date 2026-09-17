@@ -191,11 +191,44 @@ with col2:
     st.markdown("<h1 style='margin: 0; padding-top: 10px;'>PDF Brainbox</h1>", unsafe_allow_html=True)
     st.caption("🚀 Intelligent RAG Platform powered by Hybrid Search, LLM Evaluation & Knowledge Graphs")
 
-# Sidebar navigation
-page = st.sidebar.selectbox(
-    "Select Tool", 
-    ["Home", "Q&A", "Analytics & Graph", "RAG Benchmark", "Compare Documents", "Quiz", "Slides", "Notes", "Flashcards"]
+# Synchronized Navigation Bar (Top Bar & Sidebar Selector)
+tool_map = {
+    "🏠 Home": "Home",
+    "🤖 Q&A": "Q&A",
+    "📊 Analytics & Graph": "Analytics & Graph",
+    "🏆 RAG Benchmark": "RAG Benchmark",
+    "🔍 Compare Docs": "Compare Documents",
+    "🎯 Quiz": "Quiz",
+    "📊 Slides": "Slides",
+    "📝 Notes": "Notes",
+    "🎴 Flashcards": "Flashcards"
+}
+tool_labels = list(tool_map.keys())
+
+if "current_tool" not in st.session_state:
+    st.session_state.current_tool = "🏠 Home"
+
+# Top Navigation Bar
+st.markdown("---")
+selected_label = st.radio(
+    "Navigation Bar",
+    tool_labels,
+    index=tool_labels.index(st.session_state.current_tool) if st.session_state.current_tool in tool_labels else 0,
+    horizontal=True,
+    label_visibility="collapsed"
 )
+st.session_state.current_tool = selected_label
+page = tool_map[selected_label]
+
+# Sidebar Quick Navigation Selector
+sidebar_choice = st.sidebar.selectbox(
+    "Quick Tool Selector", 
+    tool_labels,
+    index=tool_labels.index(st.session_state.current_tool)
+)
+if sidebar_choice != st.session_state.current_tool:
+    st.session_state.current_tool = sidebar_choice
+    st.rerun()
 
 # File uploader in sidebar (Supports Multi-Document & Any-Page Uploads)
 uploaded_files = st.sidebar.file_uploader(
@@ -421,6 +454,61 @@ if page == "Home":
         st.code(st.session_state.full_text[:1000] + "...")
     else:
         st.info("👈 Upload your PDF, DOCX, TXT, or Image files using the sidebar to start indexing!")
+
+    st.markdown("---")
+    st.subheader("🛠️ Explore AI Tools & Features")
+    col_t1, col_t2, col_t3 = st.columns(3)
+
+    with col_t1:
+        st.markdown("#### 🤖 Document Q&A")
+        st.caption("Ask questions with Hybrid Search (BM25 + FAISS RRF) & RAG Triad Diagnostics.")
+        if st.button("Launch Q&A Engine ➔", use_container_width=True):
+            st.session_state.current_tool = "🤖 Q&A"
+            st.rerun()
+
+        st.markdown("#### 🔍 Compare Documents")
+        st.caption("Upload a second PDF to calculate Semantic Overlap % & topic divergence.")
+        if st.button("Compare 2 PDFs ➔", use_container_width=True):
+            st.session_state.current_tool = "🔍 Compare Docs"
+            st.rerun()
+
+        st.markdown("#### 📝 Study Notes")
+        st.caption("Generate structured bulleted study notes & download as Markdown.")
+        if st.button("Generate Notes ➔", use_container_width=True):
+            st.session_state.current_tool = "📝 Notes"
+            st.rerun()
+
+    with col_t2:
+        st.markdown("#### 📊 Analytics & Graph")
+        st.caption("Extract Flesch Readability statistics & 2D/3D physics Knowledge Graphs.")
+        if st.button("Launch Analytics & Graph ➔", use_container_width=True):
+            st.session_state.current_tool = "📊 Analytics & Graph"
+            st.rerun()
+
+        st.markdown("#### 🎯 Interactive Quiz")
+        st.caption("Auto-generate multiple choice quizzes from document content.")
+        if st.button("Start Quiz ➔", use_container_width=True):
+            st.session_state.current_tool = "🎯 Quiz"
+            st.rerun()
+
+        st.markdown("#### 📊 Presentation Slides")
+        st.caption("Generate presentation outlines & download directly as PowerPoint (.pptx).")
+        if st.button("Generate Slides ➔", use_container_width=True):
+            st.session_state.current_tool = "📊 Slides"
+            st.rerun()
+
+    with col_t3:
+        st.markdown("#### 🏆 RAG Benchmark")
+        st.caption("View real-time evaluation logs, Faithfulness metrics, & Latency charts.")
+        if st.button("View Telemetry Dashboard ➔", use_container_width=True):
+            st.session_state.current_tool = "🏆 RAG Benchmark"
+            st.rerun()
+
+        st.markdown("#### 🎴 3D Study Flashcards")
+        st.caption("Interactive 3D CSS flip flashcards & Anki CSV Deck Exporter.")
+        if st.button("Study Flashcards ➔", use_container_width=True):
+            st.session_state.current_tool = "🎴 Flashcards"
+            st.rerun()
 
 # Q&A PAGE
 elif page == "Q&A":
