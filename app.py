@@ -2,13 +2,7 @@ import streamlit as st
 from PyPDF2 import PdfReader
 import numpy as np
 import faiss
-try:
-    from mistralai import Mistral
-except ImportError:
-    try:
-        from mistralai.client import MistralClient as Mistral
-    except ImportError:
-        Mistral = None
+# Note: Mistral client is handled via UnifiedMistralClient below
 from docx import Document
 from PIL import Image
 import pytesseract
@@ -167,39 +161,81 @@ def extract_text_from_file(file):
     else:
         return ""
     
-# Mistral API Configuration
+# Mistral API Configuration & Dual SDK Compatibility Wrapper (v1 & v0)
 api_key = os.getenv("MISTRAL_API_KEY") or getattr(st.secrets, "MISTRAL_API_KEY", None) or "Y70bo7Bnkil7MgiZ3VdOdWwH3edP9UK4"
 embed_model = "mistral-embed"
-chat_model = "mistral-small-latest"
-fallback_chat_model = "open-mistral-7b"
-client = Mistral(api_key=api_key)
+chat_model = "open-mistral-7b"
+
+class UnifiedMistralClient:
+    def __init__(self, key):
+        self.key = key
+        self.client_v1 = None
+        self.client_v0 = None
+        
+        try:
+            from mistralai import Mistral
+            self.client_v1 = Mistral(api_key=key)
+        except Exception:
+            pass
+
+        if not self.client_v1:
+            try:
+                from mistralai.client import MistralClient
+                self.client_v0 = MistralClient(api_key=key)
+            except Exception:
+                pass
+
+    def get_embedding(self, txt):
+        if self.client_v1:
+            res = self.client_v1.embeddings.create(model=embed_model, inputs=[txt])
+            return res.data[0].embedding
+        elif self.client_v0:
+            res = self.client_v0.embeddings(model=embed_model, input=[txt])
+            return res.data[0].embedding
+        else:
+            raise RuntimeError("Mistral SDK client could not be initialized.")
+
+    def chat_complete(self, message, model_name=None):
+        target = model_name or chat_model
+        messages = [{"role": "user", "content": message}]
+        
+        if self.client_v1:
+            try:
+                res = self.client_v1.chat.complete(model=target, messages=messages)
+                return res.choices[0].message.content
+            except Exception as e:
+                if target != "open-mistral-7b":
+                    res = self.client_v1.chat.complete(model="open-mistral-7b", messages=messages)
+                    return res.choices[0].message.content
+                raise e
+        elif self.client_v0:
+            from mistralai.models.chat_completion import ChatMessage
+            msg_objs = [ChatMessage(role="user", content=message)]
+            try:
+                res = self.client_v0.chat(model=target, messages=msg_objs)
+                return res.choices[0].message.content
+            except Exception as e:
+                if target != "open-mistral-7b":
+                    res = self.client_v0.chat(model="open-mistral-7b", messages=msg_objs)
+                    return res.choices[0].message.content
+                raise e
+        else:
+            raise RuntimeError("Mistral SDK client could not be initialized.")
+
+unified_mistral = UnifiedMistralClient(api_key)
 
 def get_text_embedding(txt):
     try:
-        response = client.embeddings.create(model=embed_model, inputs=[txt])
-        return response.data[0].embedding
+        return unified_mistral.get_embedding(txt)
     except Exception as e:
-        st.error(f"⚠️ Mistral Embedding API Error: {e}. Please check your API Key or quota limits on console.mistral.ai.")
+        st.error(f"⚠️ Mistral Embedding API Error: {e}. Check API Key or limits on console.mistral.ai.")
         st.stop()
 
 def mistral_chat(user_message, is_json=False):
-    messages = [{"role": "user", "content": user_message}]
     try:
-        chat_response = client.chat.complete(
-            model=chat_model,
-            messages=messages
-        )
-        return chat_response.choices[0].message.content
+        return unified_mistral.chat_complete(user_message)
     except Exception as e:
-        # If rate limited on mistral-small-latest, fallback seamlessly to open-mistral-7b
-        try:
-            chat_response = client.chat.complete(
-                model=fallback_chat_model,
-                messages=messages
-            )
-            return chat_response.choices[0].message.content
-        except Exception as e2:
-            return f"⚠️ Mistral API Error: {e2}"
+        return f"⚠️ Mistral Chat API Error: {e}"
 
 def log_pdf_upload(user_id, file_name):
     if db_firestore:
