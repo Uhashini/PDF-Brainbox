@@ -197,8 +197,12 @@ page = st.sidebar.selectbox(
     ["Home", "Q&A", "Analytics & Graph", "RAG Benchmark", "Compare Documents", "Quiz", "Slides", "Notes", "Flashcards"]
 )
 
-# File uploader in sidebar
-uploaded_file = st.sidebar.file_uploader("Upload Primary Document", type=["pdf", "docx", "txt", "png", "jpg", "jpeg"])
+# File uploader in sidebar (Supports Multi-Document & Any-Page Uploads)
+uploaded_files = st.sidebar.file_uploader(
+    "Upload Document(s)", 
+    type=["pdf", "docx", "txt", "png", "jpg", "jpeg"],
+    accept_multiple_files=True
+)
 
 def extract_text_from_file(file):
     file_type = file.name.split('.')[-1].lower()
@@ -346,50 +350,77 @@ def log_pdf_upload(user_id, file_name):
         except Exception:
             pass
 
+# Global Multi-Document Indexer (Executes on ANY page whenever files are uploaded/updated)
+if uploaded_files:
+    current_sig = "-".join([f"{f.name}_{f.size}" for f in uploaded_files])
+    
+    if st.session_state.get("uploaded_sig") != current_sig:
+        with st.sidebar.status("Indexing documents...", expanded=True) as status:
+            all_chunks = []
+            all_text_list = []
+            doc_summaries = []
+            
+            for file in uploaded_files:
+                st.write(f"📄 Processing `{file.name}`...")
+                text = extract_text_from_file(file)
+                if text.strip():
+                    chunk_size = 512
+                    chunk_overlap = 50
+                    file_chunks = []
+                    for i in range(0, len(text), chunk_size - chunk_overlap):
+                        chunk_content = f"[Doc: {file.name}] {text[i: i + chunk_size]}"
+                        file_chunks.append(chunk_content)
+                    
+                    all_chunks.extend(file_chunks)
+                    all_text_list.append(f"--- Document: {file.name} ---\n{text}")
+                    doc_summaries.append({
+                        "File Name": file.name,
+                        "Size (KB)": round(len(file.getbuffer()) / 1024, 2),
+                        "Chunks": len(file_chunks)
+                    })
+                    log_pdf_upload(user_id=st.session_state.username, file_name=file.name)
+            
+            if all_chunks:
+                st.write("🧠 Generating embeddings & indexing...")
+                text_embeddings = np.array([get_text_embedding(c) for c in all_chunks])
+                d = text_embeddings.shape[1]
+                index = faiss.IndexFlatL2(d)
+                index.add(text_embeddings)
+                
+                hybrid_retriever = HybridRetriever(all_chunks, index, text_embeddings)
+                
+                st.session_state.chunks = all_chunks
+                st.session_state.index = index
+                st.session_state.embeddings = text_embeddings
+                st.session_state.hybrid_retriever = hybrid_retriever
+                st.session_state.full_text = "\n\n".join(all_text_list)
+                st.session_state.doc_summaries = doc_summaries
+                st.session_state.uploaded_sig = current_sig
+                st.session_state.doc_name = uploaded_files[0].name if len(uploaded_files) == 1 else f"{len(uploaded_files)} Documents"
+                
+                status.update(label=f"✅ Indexed {len(uploaded_files)} Doc(s) ({len(all_chunks)} chunks)", state="complete")
+
+# Display Active Documents in Sidebar
+if "doc_summaries" in st.session_state and st.session_state.doc_summaries:
+    st.sidebar.markdown("---")
+    st.sidebar.markdown(f"📚 **Indexed Documents ({len(st.session_state.doc_summaries)}):**")
+    for doc in st.session_state.doc_summaries:
+        st.sidebar.caption(f"• `{doc['File Name']}` ({doc['Chunks']} chunks)")
+
 # HOME PAGE
 if page == "Home":
     st.title("📄 Document Indexing & RAG Dashboard")
-    st.markdown("Upload a PDF or document in the sidebar to extract text, build dense & sparse vector indices, and explore AI tools.")
+    st.markdown("💡 **Tip:** Upload **single or multiple documents** anytime in the sidebar on **ANY page**!")
 
-    if uploaded_file is not None:
-        st.subheader("🗃️ Document Overview")
-        file_size_kb = len(uploaded_file.getbuffer()) / 1024
-        col_a, col_b = st.columns(2)
-        col_a.metric("File Name", uploaded_file.name)
-        col_b.metric("File Size", f"{file_size_kb:.2f} KB")
+    if "doc_summaries" in st.session_state and st.session_state.doc_summaries:
+        st.subheader("🗃️ Active Indexed Documents")
+        st.dataframe(st.session_state.doc_summaries, use_container_width=True)
 
-        with st.spinner("Processing & indexing document with FAISS & BM25..."):
-            text = extract_text_from_file(uploaded_file)
-
-            if not text.strip():
-                st.error("Could not extract any readable text from the uploaded file.")
-                st.stop()
-
-            chunk_size = 512
-            chunk_overlap = 50
-            chunks = []
-            for i in range(0, len(text), chunk_size - chunk_overlap):
-                chunks.append(text[i: i + chunk_size])
-
-            text_embeddings = np.array([get_text_embedding(chunk) for chunk in chunks])
-
-            d = text_embeddings.shape[1]
-            index = faiss.IndexFlatL2(d)
-            index.add(text_embeddings)
-
-            hybrid_retriever = HybridRetriever(chunks, index, text_embeddings)
-
-            st.session_state.chunks = chunks
-            st.session_state.index = index
-            st.session_state.embeddings = text_embeddings
-            st.session_state.hybrid_retriever = hybrid_retriever
-            st.session_state.full_text = text
-            st.session_state.doc_name = uploaded_file.name
-            log_pdf_upload(user_id=st.session_state.username, file_name=uploaded_file.name)
-
-        st.success(f"✅ Indexed **{len(chunks)} chunks** successfully using Dense FAISS & Sparse BM25!")
-        st.subheader("📄 Text Preview")
-        st.code(text[:800] + "...")
+        st.success(f"✅ Total **{len(st.session_state.chunks)} chunks** indexed across **{len(st.session_state.doc_summaries)} document(s)** using Dense FAISS & Sparse BM25!")
+        st.subheader("📄 Extracted Text Preview")
+        st.code(st.session_state.full_text[:1000] + "...")
+    else:
+        st.info("👈 Upload your PDF, DOCX, TXT, or Image files using the sidebar to start indexing!")
 
 # Q&A PAGE
 elif page == "Q&A":
