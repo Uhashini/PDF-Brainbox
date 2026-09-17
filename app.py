@@ -2,7 +2,6 @@ import streamlit as st
 from PyPDF2 import PdfReader
 import numpy as np
 import faiss
-# Note: Mistral client is handled via UnifiedMistralClient below
 from docx import Document
 from PIL import Image
 import pytesseract
@@ -39,6 +38,72 @@ st.set_page_config(
     page_icon="logo.png",           
     initial_sidebar_state="expanded"
 )
+
+# Custom Design System (CSS Badges, Glassmorphism, Modern Cards)
+st.markdown("""
+<style>
+/* Modern Glassmorphism & UI Styling */
+.badge-triad {
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.25), rgba(168, 85, 247, 0.25));
+    color: #a855f7;
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-weight: 700;
+    border: 1px solid rgba(168, 85, 247, 0.4);
+    display: inline-block;
+    font-size: 0.9rem;
+}
+.badge-faith {
+    background: rgba(34, 197, 94, 0.15);
+    color: #4ade80;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-weight: 600;
+    border: 1px solid rgba(34, 197, 94, 0.3);
+    display: inline-block;
+    font-size: 0.82rem;
+    margin-right: 6px;
+}
+.badge-rel {
+    background: rgba(59, 130, 246, 0.15);
+    color: #60a5fa;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-weight: 600;
+    border: 1px solid rgba(59, 130, 246, 0.3);
+    display: inline-block;
+    font-size: 0.82rem;
+    margin-right: 6px;
+}
+.badge-prec {
+    background: rgba(168, 85, 247, 0.15);
+    color: #c084fc;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-weight: 600;
+    border: 1px solid rgba(168, 85, 247, 0.3);
+    display: inline-block;
+    font-size: 0.82rem;
+}
+.badge-cache {
+    background: rgba(234, 179, 8, 0.15);
+    color: #fde047;
+    padding: 5px 14px;
+    border-radius: 20px;
+    font-weight: 600;
+    border: 1px solid rgba(234, 179, 8, 0.4);
+    display: inline-block;
+    font-size: 0.85rem;
+}
+.telemetry-box {
+    background: #0f172a;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 12px;
+    padding: 16px;
+    margin-top: 10px;
+}
+</style>
+""", unsafe_allow_html=True)
 
 # Initialize Session State Variables
 if "authenticated" not in st.session_state:
@@ -301,25 +366,20 @@ if page == "Home":
                 st.error("Could not extract any readable text from the uploaded file.")
                 st.stop()
 
-            # Split into chunks (512 chars with 50 char overlap for better context retention)
             chunk_size = 512
             chunk_overlap = 50
             chunks = []
             for i in range(0, len(text), chunk_size - chunk_overlap):
                 chunks.append(text[i: i + chunk_size])
 
-            # Generate embeddings
             text_embeddings = np.array([get_text_embedding(chunk) for chunk in chunks])
 
-            # Store in FAISS vector database
             d = text_embeddings.shape[1]
             index = faiss.IndexFlatL2(d)
             index.add(text_embeddings)
 
-            # Initialize Hybrid Retriever (FAISS + BM25)
             hybrid_retriever = HybridRetriever(chunks, index, text_embeddings)
 
-            # Store state
             st.session_state.chunks = chunks
             st.session_state.index = index
             st.session_state.embeddings = text_embeddings
@@ -339,7 +399,6 @@ elif page == "Q&A":
     if "chunks" not in st.session_state or "hybrid_retriever" not in st.session_state:
         st.warning("⚠️ Please upload a document on the **Home** page first.")
     else:
-        # Search controls in expandable bar
         with st.expander("⚙️ Advanced Retrieval & Search Controls", expanded=False):
             col_m1, col_m2 = st.columns(2)
             with col_m1:
@@ -351,7 +410,6 @@ elif page == "Q&A":
             with col_m2:
                 top_k = st.slider("Top Chunks Retrieved ($k$)", 1, 5, 3)
 
-        # Display message history
         if "messages" not in st.session_state:
             st.session_state.messages = []
 
@@ -360,15 +418,17 @@ elif page == "Q&A":
                 st.markdown(message["content"])
                 if "eval" in message:
                     ev = message["eval"]
-                    st.caption(
-                        f"📊 **RAG Triad Score:** `{ev['triad_score']}/1.0` | "
-                        f"Faithfulness: `{ev['faithfulness']}` | "
-                        f"Relevance: `{ev['answer_relevance']}` | "
-                        f"Precision: `{ev['context_precision']}` | "
-                        f"⏱️ Latency: `{ev['latency_sec']}s`"
-                    )
+                    badge_html = f"""
+                    <div style="margin-top: 8px;">
+                      <span class="badge-triad">Triad Score: {ev['triad_score']}/1.0</span>
+                      <span class="badge-faith">Faithfulness: {ev['faithfulness']}</span>
+                      <span class="badge-rel">Relevance: {ev['answer_relevance']}</span>
+                      <span class="badge-prec">Precision: {ev['context_precision']}</span>
+                    </div>
+                    """
+                    st.markdown(badge_html, unsafe_allow_html=True)
+                    st.caption(f"⏱️ **Latency:** `{ev['latency_sec']}s` | Strategy: `{ev.get('mode', 'Hybrid')}`")
 
-        # Input query prompt
         if question := st.chat_input("Ask a question about the document..."):
             with st.chat_message("user"):
                 st.markdown(question)
@@ -384,7 +444,7 @@ elif page == "Q&A":
                 latency = round(time.time() - t_start, 4)
                 with st.chat_message("assistant"):
                     st.markdown(ans)
-                    st.info(f"⚡ **Semantic Cache Hit** (Cosine Similarity: `{cached_res['similarity']:.3f}`) — Latency: `{latency}s`")
+                    st.markdown(f'<span class="badge-cache">⚡ Semantic Cache Hit (Similarity: {cached_res["similarity"]:.3f}) — Latency: {latency}s</span>', unsafe_allow_html=True)
                 st.session_state.messages.append({"role": "assistant", "content": ans})
             else:
                 # 2. Hybrid Retrieval
@@ -426,21 +486,22 @@ Answer:
                 eval_metrics["query"] = question
                 eval_metrics["mode"] = retrieval_mode
 
-                # Store in cache & benchmark log
                 st.session_state.semantic_cache.add(question, question_emb, answer, eval_metrics)
                 st.session_state.eval_history.append(eval_metrics)
 
                 with st.chat_message("assistant"):
                     st.markdown(answer)
 
-                    # Diagnostic telemetry panel
+                    # Diagnostic telemetry card with pill badges
                     with st.expander("🔍 RAG Diagnostics & Evaluation Metrics", expanded=True):
-                        c1, c2, c3, c4 = st.columns(4)
-                        c1.metric("Triad Score", f"{eval_metrics['triad_score']} / 1.0")
-                        c2.metric("Faithfulness", eval_metrics['faithfulness'])
-                        c3.metric("Answer Relevance", eval_metrics['answer_relevance'])
-                        c4.metric("Context Precision", eval_metrics['context_precision'])
-
+                        st.markdown(f"""
+                        <div style="margin-bottom: 12px;">
+                          <span class="badge-triad">Triad Score: {eval_metrics['triad_score']} / 1.0</span>
+                          <span class="badge-faith">Faithfulness: {eval_metrics['faithfulness']}</span>
+                          <span class="badge-rel">Relevance: {eval_metrics['answer_relevance']}</span>
+                          <span class="badge-prec">Precision: {eval_metrics['context_precision']}</span>
+                        </div>
+                        """, unsafe_allow_html=True)
                         st.markdown(f"**Evaluator Feedback:** *\"{eval_metrics['reasoning']}\"*")
                         st.caption(f"⏱️ **Latency Split:** Total `{total_latency}s` (Retrieval `{round(t_retrieval,3)}s` + Generation `{round(t_generation,3)}s`) | Strategy: `{retrieval_mode}`")
 
@@ -470,31 +531,80 @@ elif page == "Analytics & Graph":
         st.subheader("🕸️ Concept Knowledge Graph")
         st.markdown("Extracting Entity-Relationship triples to map key document concepts.")
 
-        if st.button("Generate Concept Knowledge Graph"):
-            with st.spinner("Extracting entity triples via LLM..."):
-                triples = DocumentAnalytics.extract_knowledge_graph(text, mistral_chat)
+        if st.button("Generate Concept Knowledge Graph") or "knowledge_triples" in st.session_state:
+            if "knowledge_triples" not in st.session_state:
+                with st.spinner("Extracting entity triples via LLM..."):
+                    st.session_state.knowledge_triples = DocumentAnalytics.extract_knowledge_graph(text, mistral_chat)
 
+            triples = st.session_state.knowledge_triples
             st.write("### Identified Knowledge Triples")
             st.dataframe(triples, use_container_width=True)
 
-            # Interactive SVG/HTML Graph rendering
-            nodes = set()
-            edges = []
-            for t in triples:
-                src = t.get("source", "A")
-                rel = t.get("relation", "relates to")
-                tgt = t.get("target", "B")
-                nodes.add(src)
-                nodes.add(tgt)
-                edges.append((src, rel, tgt))
+            # Interactive vis.js Physics Knowledge Network Component
+            nodes_dict = {}
+            edges_list = []
+            node_id = 1
 
-            st.write("### Graph Node Visualizer")
-            graph_html = "<div style='background-color:#1e1e2f; padding:20px; border-radius:10px; color:white;'>"
-            graph_html += "<h4>🔗 Concept Network Overview:</h4><ul>"
-            for src, rel, tgt in edges:
-                graph_html += f"<li><b style='color:#4CAF50;'>{src}</b> ─── <i>[{rel}]</i> ───► <b style='color:#2196F3;'>{tgt}</b></li>"
-            graph_html += "</ul></div>"
-            st.markdown(graph_html, unsafe_allow_html=True)
+            for t in triples:
+                src = str(t.get("source", "A"))
+                rel = str(t.get("relation", "relates to"))
+                tgt = str(t.get("target", "B"))
+
+                if src not in nodes_dict:
+                    nodes_dict[src] = node_id
+                    node_id += 1
+                if tgt not in nodes_dict:
+                    nodes_dict[tgt] = node_id
+                    node_id += 1
+
+                edges_list.append({
+                    "from": nodes_dict[src],
+                    "to": nodes_dict[tgt],
+                    "label": rel,
+                    "arrows": "to"
+                })
+
+            nodes_list = [
+                {"id": v, "label": k, "color": "#60a5fa" if i % 2 == 0 else "#4ade80", "shape": "dot", "size": 22} 
+                for i, (k, v) in enumerate(nodes_dict.items())
+            ]
+
+            vis_html = f"""
+            <!DOCTYPE html>
+            <html>
+            <head>
+              <script type="text/javascript" src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
+              <style>
+                #network-canvas {{
+                  width: 100%;
+                  height: 450px;
+                  border: 1px solid rgba(255,255,255,0.15);
+                  background-color: #0f172a;
+                  border-radius: 12px;
+                }}
+              </style>
+            </head>
+            <body>
+              <div id="network-canvas"></div>
+              <script type="text/javascript">
+                var nodes = new vis.DataSet({json.dumps(nodes_list)});
+                var edges = new vis.DataSet({json.dumps(edges_list)});
+                var container = document.getElementById('network-canvas');
+                var data = {{ nodes: nodes, edges: edges }};
+                var options = {{
+                  nodes: {{ font: {{ color: '#ffffff', size: 14 }}, borderWidth: 2 }},
+                  edges: {{ font: {{ color: '#94a3b8', size: 12, align: 'middle' }}, color: {{ color: '#475569', highlight: '#38bdf8' }} }},
+                  physics: {{ stabilization: true, barnesHut: {{ gravitationalConstant: -2500 }} }}
+                }};
+                var network = new vis.Network(container, data, options);
+              </script>
+            </body>
+            </html>
+            """
+
+            st.write("### 🌐 Interactive 2D/3D Graph Physics Network")
+            st.caption("💡 *Drag nodes around, click concepts, and scroll to zoom in/out.*")
+            components.html(vis_html, height=470)
 
 # RAG BENCHMARK PAGE
 elif page == "RAG Benchmark":
@@ -518,6 +628,27 @@ elif page == "RAG Benchmark":
         b3.metric("Answer Relevance", avg_rel)
         b4.metric("Context Precision", avg_prec)
         b5.metric("Avg Latency", f"{avg_lat}s")
+
+        st.markdown("---")
+        st.subheader("📈 Telemetry Visual Analytics")
+        
+        # Metric comparison bar chart
+        chart_data = {
+            "Faithfulness": [h["faithfulness"] for h in history],
+            "Answer Relevance": [h["answer_relevance"] for h in history],
+            "Context Precision": [h["context_precision"] for h in history]
+        }
+        st.write("#### Metric Score Trend across Queries")
+        st.bar_chart(chart_data)
+
+        # Latency line chart
+        latency_data = {
+            "Total Latency (s)": [h["latency_sec"] for h in history],
+            "Retrieval Latency (s)": [h.get("retrieval_latency", 0) for h in history],
+            "Generation Latency (s)": [h.get("generation_latency", 0) for h in history]
+        }
+        st.write("#### Latency Performance Breakdown (Seconds)")
+        st.line_chart(latency_data)
 
         st.markdown("---")
         st.subheader("📋 Query Telemetry Log")
@@ -599,6 +730,7 @@ Only return valid JSON without markdown codeblocks:
                     else:
                         st.error(f"❌ Q{i+1}: Incorrect (Correct: {correct})")
 
+                st.progress(correct_count / len(quiz_data))
                 st.info(f"Score: {correct_count} / {len(quiz_data)}")
 
 # NOTES PAGE
@@ -666,7 +798,7 @@ Format slide titles clearly separated by double newlines.
 
 # FLASHCARDS PAGE
 elif page == "Flashcards":
-    st.title("🎴 Study Flashcards")
+    st.title("🎴 Interactive 3D Study Flashcards")
     if "chunks" not in st.session_state:
         st.warning("⚠️ Upload a document on the **Home** page first.")
     else:
@@ -701,9 +833,75 @@ Text:
             card = flashcards[idx]
             st.subheader(f"Flashcard {idx + 1} of {len(flashcards)}")
 
-            st.info(f"**Q:** {card['question']}")
-            if st.button("Show Answer"):
-                st.success(f"**A:** {card['answer']}")
+            # 3D Flip Card Component
+            flip_card_html = f"""
+            <!DOCTYPE html>
+            <html>
+            <head>
+            <style>
+            .flip-card {{
+              background-color: transparent;
+              width: 100%;
+              height: 220px;
+              perspective: 1000px;
+              cursor: pointer;
+            }}
+            .flip-card-inner {{
+              position: relative;
+              width: 100%;
+              height: 100%;
+              text-align: center;
+              transition: transform 0.6s;
+              transform-style: preserve-3d;
+            }}
+            .flip-card:hover .flip-card-inner {{
+              transform: rotateY(180deg);
+            }}
+            .flip-card-front, .flip-card-back {{
+              position: absolute;
+              width: 100%;
+              height: 100%;
+              -webkit-backface-visibility: hidden;
+              backface-visibility: hidden;
+              border-radius: 14px;
+              padding: 24px;
+              box-sizing: border-box;
+              display: flex;
+              flex-direction: column;
+              justify-content: center;
+              align-items: center;
+            }}
+            .flip-card-front {{
+              background: linear-gradient(135deg, #1e293b, #0f172a);
+              color: white;
+              border: 1px solid #3b82f6;
+            }}
+            .flip-card-back {{
+              background: linear-gradient(135deg, #065f46, #047857);
+              color: white;
+              transform: rotateY(180deg);
+              border: 1px solid #10b981;
+            }}
+            </style>
+            </head>
+            <body>
+            <div class="flip-card">
+              <div class="flip-card-inner">
+                <div class="flip-card-front">
+                  <h3 style="margin:0; color:#60a5fa;">💡 Question</h3>
+                  <p style="font-size:1.1rem; font-weight:500;">{card['question']}</p>
+                  <small style="color:#94a3b8;">(Hover or tap to reveal answer)</small>
+                </div>
+                <div class="flip-card-back">
+                  <h3 style="margin:0; color:#34d399;">✨ Answer</h3>
+                  <p style="font-size:1.1rem;">{card['answer']}</p>
+                </div>
+              </div>
+            </div>
+            </body>
+            </html>
+            """
+            components.html(flip_card_html, height=240)
 
             col1, col2 = st.columns(2)
             with col1:
