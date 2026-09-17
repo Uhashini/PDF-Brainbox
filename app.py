@@ -16,9 +16,19 @@ import os
 import datetime
 import json
 import time
+import io
+import csv
 
 # Import Advanced Data Science & RAG Logic
-from logic.advanced_rag import HybridRetriever, SemanticCache, RAGDiagnostics, DocumentAnalytics
+from logic.advanced_rag import (
+    HybridRetriever, 
+    SemanticCache, 
+    RAGDiagnostics, 
+    DocumentAnalytics, 
+    MultiQueryExpander, 
+    MultiDocumentComparator,
+    safe_parse_json
+)
 
 # Initialize Firebase (handling optional secrets gracefully)
 try:
@@ -94,13 +104,6 @@ st.markdown("""
     border: 1px solid rgba(234, 179, 8, 0.4);
     display: inline-block;
     font-size: 0.85rem;
-}
-.telemetry-box {
-    background: #0f172a;
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 12px;
-    padding: 16px;
-    margin-top: 10px;
 }
 </style>
 """, unsafe_allow_html=True)
@@ -191,11 +194,11 @@ with col2:
 # Sidebar navigation
 page = st.sidebar.selectbox(
     "Select Tool", 
-    ["Home", "Q&A", "Analytics & Graph", "RAG Benchmark", "Quiz", "Slides", "Notes", "Flashcards"]
+    ["Home", "Q&A", "Analytics & Graph", "RAG Benchmark", "Compare Documents", "Quiz", "Slides", "Notes", "Flashcards"]
 )
 
 # File uploader in sidebar
-uploaded_file = st.sidebar.file_uploader("Upload Document", type=["pdf", "docx", "txt", "png", "jpg", "jpeg"])
+uploaded_file = st.sidebar.file_uploader("Upload Primary Document", type=["pdf", "docx", "txt", "png", "jpg", "jpeg"])
 
 def extract_text_from_file(file):
     file_type = file.name.split('.')[-1].lower()
@@ -225,33 +228,6 @@ def extract_text_from_file(file):
 
     else:
         return ""
-    
-# JSON Parsing Helper
-import re
-
-def safe_parse_json(text_content):
-    if not isinstance(text_content, str):
-        return text_content
-    clean_text = text_content.strip()
-    clean_text = re.sub(r"^```(?:json)?", "", clean_text, flags=re.MULTILINE)
-    clean_text = re.sub(r"```$", "", clean_text, flags=re.MULTILINE).strip()
-    try:
-        return json.loads(clean_text)
-    except Exception:
-        pass
-    sb, eb = clean_text.find('['), clean_text.rfind(']')
-    if sb != -1 and eb > sb:
-        try:
-            return json.loads(clean_text[sb:eb + 1])
-        except Exception:
-            pass
-    sb, eb = clean_text.find('{'), clean_text.rfind('}')
-    if sb != -1 and eb > sb:
-        try:
-            return json.loads(clean_text[sb:eb + 1])
-        except Exception:
-            pass
-    raise ValueError(f"Could not parse JSON output: {text_content[:150]}")
 
 # Mistral API Configuration & Dual SDK Compatibility Wrapper (v1 & v0)
 def get_api_key():
@@ -276,14 +252,12 @@ class UnifiedMistralClient:
         self.client_v0 = None
         self.err_log = []
         
-        # Strategy 1: from mistralai import Mistral (v1 SDK)
         try:
             from mistralai import Mistral
             self.client_v1 = Mistral(api_key=key)
         except Exception as e1:
             self.err_log.append(f"s1 error: {e1}")
 
-        # Strategy 2: from mistralai import MistralClient (v0 SDK top-level)
         if not self.client_v1 and not self.client_v0:
             try:
                 from mistralai import MistralClient
@@ -291,7 +265,6 @@ class UnifiedMistralClient:
             except Exception as e2:
                 self.err_log.append(f"s2 error: {e2}")
 
-        # Strategy 3: from mistralai.client import MistralClient (v0 SDK submodule)
         if not self.client_v1 and not self.client_v0:
             try:
                 from mistralai.client import MistralClient
@@ -299,7 +272,6 @@ class UnifiedMistralClient:
             except Exception as e3:
                 self.err_log.append(f"s3 error: {e3}")
 
-        # Strategy 4: Dynamic attribute inspection on imported mistralai module
         if not self.client_v1 and not self.client_v0:
             try:
                 import mistralai
@@ -412,6 +384,7 @@ if page == "Home":
             st.session_state.embeddings = text_embeddings
             st.session_state.hybrid_retriever = hybrid_retriever
             st.session_state.full_text = text
+            st.session_state.doc_name = uploaded_file.name
             log_pdf_upload(user_id=st.session_state.username, file_name=uploaded_file.name)
 
         st.success(f"✅ Indexed **{len(chunks)} chunks** successfully using Dense FAISS & Sparse BM25!")
@@ -421,7 +394,7 @@ if page == "Home":
 # Q&A PAGE
 elif page == "Q&A":
     st.title("🤖 Advanced Question Answering Engine")
-    st.markdown("Powered by **Hybrid Search (BM25 + FAISS RRF)**, **Semantic Caching**, and **LLM-as-a-Judge Evaluation**.")
+    st.markdown("Powered by **Hybrid Search (BM25 + FAISS RRF)**, **Agentic Multi-Query Expansion**, **Semantic Caching**, and **LLM Evaluation**.")
 
     if "chunks" not in st.session_state or "hybrid_retriever" not in st.session_state:
         st.warning("⚠️ Please upload a document on the **Home** page first.")
@@ -434,6 +407,7 @@ elif page == "Q&A":
                     ["Hybrid (FAISS + BM25 + RRF)", "Dense Vector (FAISS)", "Sparse Keyword (BM25)"]
                 )
                 st.session_state.retrieval_mode = retrieval_mode
+                enable_multi_query = st.checkbox("🤖 Enable Agentic Multi-Query Expansion", value=False)
             with col_m2:
                 top_k = st.slider("Top Chunks Retrieved ($k$)", 1, 5, 3)
 
@@ -474,15 +448,32 @@ elif page == "Q&A":
                     st.markdown(f'<span class="badge-cache">⚡ Semantic Cache Hit (Similarity: {cached_res["similarity"]:.3f}) — Latency: {latency}s</span>', unsafe_allow_html=True)
                 st.session_state.messages.append({"role": "assistant", "content": ans})
             else:
-                # 2. Hybrid Retrieval
+                # 2. Agentic Multi-Query Expansion or Single Query Retrieval
+                query_list = [question]
+                if enable_multi_query:
+                    with st.spinner("🤖 Agentic Multi-Query Expansion generating variations..."):
+                        variations = MultiQueryExpander.expand_query(question, mistral_chat)
+                        query_list = [question] + variations
+                        st.info(f"💡 **Generated Query Variations:** {variations}")
+
                 mode_key = "hybrid" if "Hybrid" in retrieval_mode else ("sparse" if "Sparse" in retrieval_mode else "dense")
                 t_ret_start = time.time()
-                retrieved_chunks = st.session_state.hybrid_retriever.search(
-                    query=question,
-                    query_embedding=question_emb,
-                    top_k=top_k,
-                    mode=mode_key
-                )
+                
+                # Retrieve & fuse chunks across all queries
+                all_chunks = []
+                for q in query_list:
+                    q_emb = get_text_embedding(q)
+                    ret_chunks = st.session_state.hybrid_retriever.search(
+                        query=q,
+                        query_embedding=q_emb,
+                        top_k=top_k,
+                        mode=mode_key
+                    )
+                    all_chunks.extend(ret_chunks)
+                
+                # Deduplicate chunks maintaining order
+                seen = set()
+                retrieved_chunks = [c for c in all_chunks if not (c in seen or seen.add(c))][:top_k * 2]
                 t_retrieval = time.time() - t_ret_start
 
                 context = "\n---\n".join(retrieved_chunks)
@@ -511,7 +502,7 @@ Answer:
                 eval_metrics["retrieval_latency"] = round(t_retrieval, 3)
                 eval_metrics["generation_latency"] = round(t_generation, 3)
                 eval_metrics["query"] = question
-                eval_metrics["mode"] = retrieval_mode
+                eval_metrics["mode"] = f"{retrieval_mode} + MultiQuery" if enable_multi_query else retrieval_mode
 
                 st.session_state.semantic_cache.add(question, question_emb, answer, eval_metrics)
                 st.session_state.eval_history.append(eval_metrics)
@@ -519,7 +510,6 @@ Answer:
                 with st.chat_message("assistant"):
                     st.markdown(answer)
 
-                    # Diagnostic telemetry card with pill badges
                     with st.expander("🔍 RAG Diagnostics & Evaluation Metrics", expanded=True):
                         st.markdown(f"""
                         <div style="margin-bottom: 12px;">
@@ -530,7 +520,7 @@ Answer:
                         </div>
                         """, unsafe_allow_html=True)
                         st.markdown(f"**Evaluator Feedback:** *\"{eval_metrics['reasoning']}\"*")
-                        st.caption(f"⏱️ **Latency Split:** Total `{total_latency}s` (Retrieval `{round(t_retrieval,3)}s` + Generation `{round(t_generation,3)}s`) | Strategy: `{retrieval_mode}`")
+                        st.caption(f"⏱️ **Latency Split:** Total `{total_latency}s` (Retrieval `{round(t_retrieval,3)}s` + Generation `{round(t_generation,3)}s`) | Strategy: `{eval_metrics['mode']}`")
 
                 st.session_state.messages.append({"role": "assistant", "content": answer, "eval": eval_metrics})
 
@@ -544,7 +534,6 @@ elif page == "Analytics & Graph":
     else:
         text = st.session_state.full_text
 
-        # 1. NLP Readability Metrics
         stats = DocumentAnalytics.compute_stats(text)
         st.subheader("📈 Readability & Lexical Metrics")
 
@@ -567,7 +556,6 @@ elif page == "Analytics & Graph":
             st.write("### Identified Knowledge Triples")
             st.dataframe(triples, use_container_width=True)
 
-            # Interactive vis.js Physics Knowledge Network Component
             nodes_dict = {}
             edges_list = []
             node_id = 1
@@ -659,7 +647,6 @@ elif page == "RAG Benchmark":
         st.markdown("---")
         st.subheader("📈 Telemetry Visual Analytics")
         
-        # Metric comparison bar chart
         chart_data = {
             "Faithfulness": [h["faithfulness"] for h in history],
             "Answer Relevance": [h["answer_relevance"] for h in history],
@@ -668,7 +655,6 @@ elif page == "RAG Benchmark":
         st.write("#### Metric Score Trend across Queries")
         st.bar_chart(chart_data)
 
-        # Latency line chart
         latency_data = {
             "Total Latency (s)": [h["latency_sec"] for h in history],
             "Retrieval Latency (s)": [h.get("retrieval_latency", 0) for h in history],
@@ -691,6 +677,67 @@ elif page == "RAG Benchmark":
                 "Latency (s)": h.get("latency_sec", 0)
             })
         st.dataframe(log_table, use_container_width=True)
+
+# COMPARE DOCUMENTS PAGE
+elif page == "Compare Documents":
+    st.title("🔍 Multi-Document Comparison & Semantic Similarity")
+    st.markdown("Compare two documents side-by-side to compute embedding cosine similarity, shared topics, and comparative Q&A.")
+
+    if "full_text" not in st.session_state or "embeddings" not in st.session_state:
+        st.warning("⚠️ Please upload your primary document on the **Home** page first.")
+    else:
+        text_a = st.session_state.full_text
+        embeddings_a = st.session_state.embeddings
+        doc_a_name = st.session_state.get("doc_name", "Primary Document")
+
+        st.info(f"📄 **Document A:** `{doc_a_name}` (Indexed)")
+
+        uploaded_b = st.file_uploader("Upload Second Document (Document B)", type=["pdf", "docx", "txt"])
+
+        if uploaded_b is not None:
+            text_b = extract_text_from_file(uploaded_b)
+            if text_b.strip():
+                with st.spinner("Embedding Document B for comparison..."):
+                    chunk_size = 512
+                    chunks_b = [text_b[i:i+chunk_size] for i in range(0, len(text_b), chunk_size)]
+                    embeddings_b = np.array([get_text_embedding(c) for c in chunks_b])
+
+                # 1. Compute Semantic Similarity %
+                sim_score = MultiDocumentComparator.compute_similarity(embeddings_a, embeddings_b)
+
+                st.subheader("📊 Document Similarity Metrics")
+                c1, c2 = st.columns(2)
+                c1.metric("Semantic Overlap", f"{sim_score}%")
+                if sim_score > 75:
+                    c2.success("High Topic Alignment")
+                elif sim_score > 45:
+                    c2.info("Moderate Semantic Similarity")
+                else:
+                    c2.warning("Distinct/Divergent Content")
+
+                st.markdown("---")
+                st.subheader("🔍 Comparative Topic Extraction")
+                if st.button("Extract Shared & Unique Topics") or "topic_comparison" in st.session_state:
+                    if "topic_comparison" not in st.session_state:
+                        with st.spinner("Comparing concepts across documents..."):
+                            st.session_state.topic_comparison = MultiDocumentComparator.compare_topics(text_a, text_b, mistral_chat)
+
+                    comp = st.session_state.topic_comparison
+                    st.write(f"**Summary:** *\"{comp.get('comparison_summary', '')}\"*")
+
+                    tc1, tc2, tc3 = st.columns(3)
+                    with tc1:
+                        st.markdown("### 🤝 Shared Topics")
+                        for t in comp.get("shared_topics", []):
+                            st.write(f"- {t}")
+                    with tc2:
+                        st.markdown(f"### 📄 Unique to {doc_a_name}")
+                        for t in comp.get("unique_to_doc_a", []):
+                            st.write(f"- {t}")
+                    with tc3:
+                        st.markdown(f"### 📄 Unique to {uploaded_b.name}")
+                        for t in comp.get("unique_to_doc_b", []):
+                            st.write(f"- {t}")
 
 # QUIZ PAGE
 elif page == "Quiz":
@@ -775,7 +822,10 @@ Include key definitions and core summary points.
 
             notes = st.session_state.generated_notes
             st.markdown(notes)
-            st.download_button("📥 Download Notes (.txt)", notes, file_name="study_notes.txt")
+            
+            c1, c2 = st.columns(2)
+            c1.download_button("📥 Download Notes (.txt)", notes, file_name="study_notes.txt", mime="text/plain")
+            c2.download_button("📥 Download Markdown (.md)", notes, file_name="study_notes.md", mime="text/markdown")
 
 # SLIDES PAGE
 elif page == "Slides":
@@ -921,6 +971,21 @@ Text:
             </html>
             """
             components.html(flip_card_html, height=240)
+
+            # Anki CSV Deck Exporter
+            csv_buffer = io.StringIO()
+            writer = csv.writer(csv_buffer)
+            writer.writerow(["Front", "Back"])
+            for fc in flashcards:
+                writer.writerow([fc.get("question", ""), fc.get("answer", "")])
+            anki_csv_bytes = csv_buffer.getvalue()
+
+            st.download_button(
+                "📥 Download Anki Deck (.csv)", 
+                anki_csv_bytes, 
+                file_name="pdf_brainbox_anki_deck.csv", 
+                mime="text/csv"
+            )
 
             col1, col2 = st.columns(2)
             with col1:

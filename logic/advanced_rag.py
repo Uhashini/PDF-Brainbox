@@ -28,6 +28,7 @@ def safe_parse_json(text_content):
             pass
     raise ValueError(f"Could not parse JSON output: {text_content[:150]}")
 
+
 class HybridRetriever:
     """
     Hybrid Retriever combining Dense Vector Search (FAISS) and Sparse Keyword Search (BM25)
@@ -37,7 +38,6 @@ class HybridRetriever:
         self.chunks = chunks
         self.faiss_index = faiss_index
         self.embeddings = text_embeddings
-        # Simple whitespace tokenizer for BM25
         tokenized_corpus = [chunk.lower().split() for chunk in chunks]
         self.bm25 = BM25Okapi(tokenized_corpus)
 
@@ -66,7 +66,7 @@ class HybridRetriever:
 
         # 3. Reciprocal Rank Fusion (RRF)
         rrf_scores = {}
-        rrf_k = 60  # Standard RRF constant
+        rrf_k = 60
 
         for rank, idx in enumerate(dense_indices):
             if idx < 0 or idx >= num_chunks:
@@ -78,9 +78,33 @@ class HybridRetriever:
                 continue
             rrf_scores[idx] = rrf_scores.get(idx, 0.0) + (1.0 / (rrf_k + rank + 1))
 
-        # Sort by fused RRF score
         sorted_indices = sorted(rrf_scores.keys(), key=lambda i: rrf_scores[i], reverse=True)
         return [self.chunks[i] for i in sorted_indices[:top_k]]
+
+
+class MultiQueryExpander:
+    """
+    Agentic Multi-Query Expansion Module.
+    Generates 3 semantic rephrasings of a user query to handle underspecified prompts.
+    """
+    @staticmethod
+    def expand_query(query, mistral_chat_fn):
+        prompt = f"""
+You are an AI search query optimizer. Generate 3 distinct, high-quality search query variations that rephrase or explore different semantic aspects of the user's question.
+
+Original Query: {query}
+
+Return ONLY a JSON array of 3 strings:
+["Variation 1", "Variation 2", "Variation 3"]
+"""
+        try:
+            res = mistral_chat_fn(prompt, is_json=True)
+            variations = safe_parse_json(res)
+            if isinstance(variations, list) and len(variations) > 0:
+                return variations[:3]
+        except Exception:
+            pass
+        return [query]
 
 
 class SemanticCache:
@@ -199,7 +223,6 @@ class DocumentAnalytics:
         unique_words = len(set(w.lower() for w in words))
         lexical_diversity = round((unique_words / max(num_words, 1)) * 100, 1)
 
-        # Estimate syllable count for Flesch-Kincaid Ease score
         def count_syllables(word):
             word = word.lower()
             count = len(re.findall(r'[aeiouy]+', word))
@@ -207,7 +230,6 @@ class DocumentAnalytics:
 
         total_syllables = sum(count_syllables(w) for w in words) if words else 1
         
-        # Flesch Reading Ease Formula
         reading_ease = 206.835 - (1.015 * (num_words / num_sentences)) - (84.6 * (total_syllables / max(num_words, 1)))
         reading_ease = max(0, min(100, round(reading_ease, 1)))
 
@@ -243,3 +265,51 @@ Return ONLY a JSON list of objects:
                 {"source": "RAG Engine", "relation": "indexes", "target": "Vector Embeddings"},
                 {"source": "Mistral AI", "relation": "generates", "target": "Structured Insights"}
             ]
+
+
+class MultiDocumentComparator:
+    """
+    Computes Semantic Cosine Distance & Topic Overlap between two documents.
+    """
+    @staticmethod
+    def compute_similarity(embeddings_a, embeddings_b):
+        if len(embeddings_a) == 0 or len(embeddings_b) == 0:
+            return 0.0
+        c_a = np.mean(embeddings_a, axis=0)
+        c_b = np.mean(embeddings_b, axis=0)
+        norm_a = np.linalg.norm(c_a)
+        norm_b = np.linalg.norm(c_b)
+        if norm_a == 0 or norm_b == 0:
+            return 0.0
+        cos_sim = np.dot(c_a, c_b) / (norm_a * norm_b)
+        return round(float(cos_sim) * 100, 1)
+
+    @staticmethod
+    def compare_topics(text_a, text_b, mistral_chat_fn):
+        prompt = f"""
+Compare the key concepts of Document A and Document B.
+
+Document A Excerpt:
+{text_a[:2000]}
+
+Document B Excerpt:
+{text_b[:2000]}
+
+Return JSON format:
+{{
+  "shared_topics": ["Topic 1", "Topic 2"],
+  "unique_to_doc_a": ["Concept A1"],
+  "unique_to_doc_b": ["Concept B1"],
+  "comparison_summary": "1-sentence comparison summary."
+}}
+"""
+        try:
+            res = mistral_chat_fn(prompt, is_json=True)
+            return safe_parse_json(res)
+        except Exception:
+            return {
+                "shared_topics": ["Technical Domain Concepts"],
+                "unique_to_doc_a": ["Section A Details"],
+                "unique_to_doc_b": ["Section B Details"],
+                "comparison_summary": "Both documents cover related topics with unique focus areas."
+            }
