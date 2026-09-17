@@ -3,7 +3,7 @@ from PyPDF2 import PdfReader
 from pptx import Presentation
 from pptx.util import Inches
 
-api_key = "izPOWi2wtW6ARdOuZihOwjXja6Lzl8a0"
+api_key = "Y70bo7Bnkil7MgiZ3VdOdWwH3edP9UK4"
 embed_model = "mistral-embed"
 chat_model = "mistral-small-latest"
 client = Mistral(api_key=api_key)

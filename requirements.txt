@@ -2,7 +2,7 @@ streamlit
 PyPDF2
 numpy
 faiss-cpu
-mistralai
+mistralai>=1.0.0
 python-docx
 Pillow
 pytesseract
@@ -12,3 +12,4 @@ bcrypt
 pyrebase4
 firebase-admin
 oauth2client
+rank_bm25
