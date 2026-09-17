@@ -184,18 +184,41 @@ class UnifiedMistralClient:
         self.client_v0 = None
         self.err_log = []
         
+        # Strategy 1: from mistralai import Mistral (v1 SDK)
         try:
             from mistralai import Mistral
             self.client_v1 = Mistral(api_key=key)
         except Exception as e1:
-            self.err_log.append(f"v1 import/init error: {e1}")
+            self.err_log.append(f"s1 error: {e1}")
 
-        if not self.client_v1:
+        # Strategy 2: from mistralai import MistralClient (v0 SDK top-level)
+        if not self.client_v1 and not self.client_v0:
+            try:
+                from mistralai import MistralClient
+                self.client_v0 = MistralClient(api_key=key)
+            except Exception as e2:
+                self.err_log.append(f"s2 error: {e2}")
+
+        # Strategy 3: from mistralai.client import MistralClient (v0 SDK submodule)
+        if not self.client_v1 and not self.client_v0:
             try:
                 from mistralai.client import MistralClient
                 self.client_v0 = MistralClient(api_key=key)
-            except Exception as e2:
-                self.err_log.append(f"v0 import/init error: {e2}")
+            except Exception as e3:
+                self.err_log.append(f"s3 error: {e3}")
+
+        # Strategy 4: Dynamic attribute inspection on imported mistralai module
+        if not self.client_v1 and not self.client_v0:
+            try:
+                import mistralai
+                if hasattr(mistralai, "Mistral"):
+                    cls = getattr(mistralai, "Mistral")
+                    self.client_v1 = cls(api_key=key)
+                elif hasattr(mistralai, "MistralClient"):
+                    cls = getattr(mistralai, "MistralClient")
+                    self.client_v0 = cls(api_key=key)
+            except Exception as e4:
+                self.err_log.append(f"s4 error: {e4}")
 
     def get_embedding(self, txt):
         if self.client_v1:
