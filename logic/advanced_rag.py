@@ -4,6 +4,30 @@ import re
 import time
 from rank_bm25 import BM25Okapi
 
+def safe_parse_json(text_content):
+    if not isinstance(text_content, str):
+        return text_content
+    clean_text = text_content.strip()
+    clean_text = re.sub(r"^```(?:json)?", "", clean_text, flags=re.MULTILINE)
+    clean_text = re.sub(r"```$", "", clean_text, flags=re.MULTILINE).strip()
+    try:
+        return json.loads(clean_text)
+    except Exception:
+        pass
+    sb, eb = clean_text.find('['), clean_text.rfind(']')
+    if sb != -1 and eb > sb:
+        try:
+            return json.loads(clean_text[sb:eb + 1])
+        except Exception:
+            pass
+    sb, eb = clean_text.find('{'), clean_text.rfind('}')
+    if sb != -1 and eb > sb:
+        try:
+            return json.loads(clean_text[sb:eb + 1])
+        except Exception:
+            pass
+    raise ValueError(f"Could not parse JSON output: {text_content[:150]}")
+
 class HybridRetriever:
     """
     Hybrid Retriever combining Dense Vector Search (FAISS) and Sparse Keyword Search (BM25)
@@ -136,12 +160,7 @@ Output JSON only in this exact format:
 """
         try:
             raw_res = mistral_chat_fn(prompt, is_json=True).strip()
-            # Clean markdown codeblocks if present
-            if raw_res.startswith("```"):
-                raw_res = re.sub(r"^```(?:json)?\n?", "", raw_res)
-                raw_res = re.sub(r"\n?```$", "", raw_res)
-            
-            data = json.loads(raw_res)
+            data = safe_parse_json(raw_res)
             faithfulness = float(data.get("faithfulness", 0.90))
             relevance = float(data.get("answer_relevance", 0.90))
             precision = float(data.get("context_precision", 0.85))
@@ -216,10 +235,7 @@ Return ONLY a JSON list of objects:
 """
         try:
             res = mistral_chat_fn(prompt, is_json=True).strip()
-            if res.startswith("```"):
-                res = re.sub(r"^```(?:json)?\n?", "", res)
-                res = re.sub(r"\n?```$", "", res)
-            triples = json.loads(res)
+            triples = safe_parse_json(res)
             return triples if isinstance(triples, list) else []
         except Exception:
             return [

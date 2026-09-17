@@ -226,6 +226,33 @@ def extract_text_from_file(file):
     else:
         return ""
     
+# JSON Parsing Helper
+import re
+
+def safe_parse_json(text_content):
+    if not isinstance(text_content, str):
+        return text_content
+    clean_text = text_content.strip()
+    clean_text = re.sub(r"^```(?:json)?", "", clean_text, flags=re.MULTILINE)
+    clean_text = re.sub(r"```$", "", clean_text, flags=re.MULTILINE).strip()
+    try:
+        return json.loads(clean_text)
+    except Exception:
+        pass
+    sb, eb = clean_text.find('['), clean_text.rfind(']')
+    if sb != -1 and eb > sb:
+        try:
+            return json.loads(clean_text[sb:eb + 1])
+        except Exception:
+            pass
+    sb, eb = clean_text.find('{'), clean_text.rfind('}')
+    if sb != -1 and eb > sb:
+        try:
+            return json.loads(clean_text[sb:eb + 1])
+        except Exception:
+            pass
+    raise ValueError(f"Could not parse JSON output: {text_content[:150]}")
+
 # Mistral API Configuration & Dual SDK Compatibility Wrapper (v1 & v0)
 def get_api_key():
     env_key = os.getenv("MISTRAL_API_KEY")
@@ -692,12 +719,8 @@ Only return valid JSON without markdown codeblocks:
 """
                 try:
                     with st.spinner("Generating quiz questions..."):
-                        quiz_str = mistral_chat(quiz_prompt, is_json=True).strip()
-                        if quiz_str.startswith("```"):
-                            quiz_str = json.loads(quiz_str.replace("```json", "").replace("```", "").strip())
-                        else:
-                            quiz_str = json.loads(quiz_str)
-                        st.session_state.quiz_data = quiz_str
+                        quiz_str = mistral_chat(quiz_prompt, is_json=True)
+                        st.session_state.quiz_data = safe_parse_json(quiz_str)
                 except Exception as e:
                     st.error(f"Error generating quiz: {e}")
                     st.stop()
@@ -815,12 +838,8 @@ Text:
 """
                 try:
                     with st.spinner("Generating flashcards..."):
-                        fc_str = mistral_chat(flashcard_prompt, is_json=True).strip()
-                        if fc_str.startswith("```"):
-                            fc_str = json.loads(fc_str.replace("```json", "").replace("```", "").strip())
-                        else:
-                            fc_str = json.loads(fc_str)
-                        st.session_state.flashcards = fc_str
+                        fc_str = mistral_chat(flashcard_prompt, is_json=True)
+                        st.session_state.flashcards = safe_parse_json(fc_str)
                 except Exception as e:
                     st.error(f"Error creating flashcards: {e}")
                     st.stop()
