@@ -162,7 +162,18 @@ def extract_text_from_file(file):
         return ""
     
 # Mistral API Configuration & Dual SDK Compatibility Wrapper (v1 & v0)
-api_key = os.getenv("MISTRAL_API_KEY") or getattr(st.secrets, "MISTRAL_API_KEY", None) or "Y70bo7Bnkil7MgiZ3VdOdWwH3edP9UK4"
+def get_api_key():
+    env_key = os.getenv("MISTRAL_API_KEY")
+    if env_key:
+        return env_key
+    try:
+        if "MISTRAL_API_KEY" in st.secrets:
+            return st.secrets["MISTRAL_API_KEY"]
+    except Exception:
+        pass
+    return "Y70bo7Bnkil7MgiZ3VdOdWwH3edP9UK4"
+
+api_key = get_api_key()
 embed_model = "mistral-embed"
 chat_model = "open-mistral-7b"
 
@@ -171,19 +182,20 @@ class UnifiedMistralClient:
         self.key = key
         self.client_v1 = None
         self.client_v0 = None
+        self.err_log = []
         
         try:
             from mistralai import Mistral
             self.client_v1 = Mistral(api_key=key)
-        except Exception:
-            pass
+        except Exception as e1:
+            self.err_log.append(f"v1 import/init error: {e1}")
 
         if not self.client_v1:
             try:
                 from mistralai.client import MistralClient
                 self.client_v0 = MistralClient(api_key=key)
-            except Exception:
-                pass
+            except Exception as e2:
+                self.err_log.append(f"v0 import/init error: {e2}")
 
     def get_embedding(self, txt):
         if self.client_v1:
@@ -193,7 +205,7 @@ class UnifiedMistralClient:
             res = self.client_v0.embeddings(model=embed_model, input=[txt])
             return res.data[0].embedding
         else:
-            raise RuntimeError("Mistral SDK client could not be initialized.")
+            raise RuntimeError(f"Mistral SDK client failed: {self.err_log}")
 
     def chat_complete(self, message, model_name=None):
         target = model_name or chat_model
@@ -220,7 +232,7 @@ class UnifiedMistralClient:
                     return res.choices[0].message.content
                 raise e
         else:
-            raise RuntimeError("Mistral SDK client could not be initialized.")
+            raise RuntimeError(f"Mistral SDK client failed: {self.err_log}")
 
 unified_mistral = UnifiedMistralClient(api_key)
 
