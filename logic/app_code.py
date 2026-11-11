@@ -35,24 +35,29 @@ def extract_text_from_pdf(file):
     return ""
 
 def generate_pptx_from_text(text):
-            prs = Presentation()
-            slide_layout = prs.slide_layouts[1]  # Title and content layout
+    prs = Presentation()
+    slide_layout = prs.slide_layouts[1]  # Title and content layout
 
-            # Split slides by 'Title' and its bullets
-            slides = text.strip().split("\n\n")
-            for slide in slides:
-                lines = slide.strip().split("\n")
-                if not lines:
-                    continue
-                title = lines[0]
-                content = lines[1:]
+    if isinstance(text, list):
+        slides = text
+    else:
+        slides = text.strip().split("\n\n") if text and text.strip() else []
 
-                slide_obj = prs.slides.add_slide(slide_layout)
-                slide_obj.shapes.title.text = title
-                body = slide_obj.placeholders[1]
-                body.text = "\n".join(content)
+    for slide in slides:
+        if isinstance(slide, str):
+            lines = slide.strip().split("\n")
+        else:
+            lines = [str(slide)]
+        if not lines:
+            continue
+        title = lines[0]
+        content = lines[1:]
 
-            # Save
-            pptx_path = "presentation.pptx"
-            prs.save(pptx_path)
-            return pptx_path
+        slide_obj = prs.slides.add_slide(slide_layout)
+        slide_obj.shapes.title.text = title[:40]
+        body = slide_obj.placeholders[1]
+        body.text = "\n".join(content) if content else title
+
+    pptx_path = "presentation.pptx"
+    prs.save(pptx_path)
+    return prs if isinstance(text, list) else pptx_path

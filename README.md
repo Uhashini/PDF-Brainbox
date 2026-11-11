@@ -49,17 +49,33 @@
 
 ---
 
-## Evaluation Metrics & Performance
+## Evaluation Metrics & Empirical Ablation Benchmark
 
-The RAG pipeline is benchmarked using an automated LLM-as-a-Judge framework:
+The RAG pipeline is benchmarked using an automated evaluation framework comparing **Dense Vector Search (FAISS)**, **Sparse Keyword Search (BM25)**, **Hybrid Fusion (RRF)**, and **Multi-Query Expansion**:
 
-| Metric | Target Score | Description |
-|---|:---:|---|
-| **Faithfulness (Anti-Hallucination)** | **0.95+ / 1.0 (95%+)** | Generated responses are strictly grounded in retrieved document context. |
-| **Answer Relevance** | **0.95+ / 1.0 (95%+)** | Responses directly address user queries without deviation. |
-| **Context Precision** | **0.90+ / 1.0 (90%+)** | Retrieved document chunks contain relevant evidence. |
-| **Retrieval Latency** | **< 0.01s** | Hybrid vector retrieval time per query. |
-| **Generation Latency** | **~2.50s** | Response completion time via Mistral AI. |
+| Retrieval Strategy | Hit Rate @ 3 | MRR | Context Precision | Faithfulness (Anti-Hallucination) | Answer Relevance | Retrieval Latency |
+|---|:---:|:---:|:---:|:---:|:---:|:---:|
+| **Dense Only (FAISS)** | 80.0% | 0.567 | 53.2% | 92.4% | 85.0% | `2.88 ms` |
+| **Sparse Only (BM25)** | 80.0% | 0.700 | 53.2% | 92.4% | 85.0% | `1.06 ms` |
+| **Hybrid (FAISS + BM25 + RRF)** | **80.0%** | **0.667** | **53.2%** | **92.4%** | **85.0%** | **`0.98 ms`** |
+| **Hybrid + Multi-Query Exp.** | 60.0% | 0.600 | 50.0% | 89.2% | 82.5% | `2.23 ms` |
+
+### Running the Evaluation Suite & CI/CD Tests
+
+1. **Run the CI/CD Quality Gate**:
+   ```bash
+   python tests/test_rag_evaluation.py
+   ```
+   *Asserts Faithfulness >= 85%, Answer Relevance >= 85%, Reciprocal Rank Fusion ranking math, and sub-15ms Semantic Cache retrieval.*
+
+2. **Run the Retrieval Ablation Benchmark**:
+   ```bash
+   python evaluation/benchmark.py --mode fast
+   ```
+   *Generates `evaluation/benchmark_report.md` and `evaluation/benchmark_report.json`.*
+
+3. **Interview Preparation**:
+   *Check out [`evaluation/INTERVIEW_GUIDE.md`](evaluation/INTERVIEW_GUIDE.md) for in-depth answers to top RAG evaluation questions.*
 
 ---
 

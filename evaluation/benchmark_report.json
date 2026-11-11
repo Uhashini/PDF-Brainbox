@@ -1,0 +1,282 @@
+{
+  "summary": {
+    "dense": {
+      "hit_rate_at_3": 0.8,
+      "mrr": 0.667,
+      "avg_context_precision": 0.532,
+      "avg_faithfulness": 0.96,
+      "avg_answer_relevance": 0.96,
+      "avg_retrieval_latency_ms": 7.81,
+      "avg_total_latency_ms": 12623.45
+    },
+    "sparse": {
+      "hit_rate_at_3": 0.8,
+      "mrr": 0.7,
+      "avg_context_precision": 0.532,
+      "avg_faithfulness": 0.96,
+      "avg_answer_relevance": 0.96,
+      "avg_retrieval_latency_ms": 0.2,
+      "avg_total_latency_ms": 12535.11
+    },
+    "hybrid": {
+      "hit_rate_at_3": 0.8,
+      "mrr": 0.667,
+      "avg_context_precision": 0.532,
+      "avg_faithfulness": 0.96,
+      "avg_answer_relevance": 0.96,
+      "avg_retrieval_latency_ms": 0.89,
+      "avg_total_latency_ms": 12489.62
+    },
+    "hybrid_multiquery": {
+      "hit_rate_at_3": 0.6,
+      "mrr": 0.6,
+      "avg_context_precision": 0.5,
+      "avg_faithfulness": 0.96,
+      "avg_answer_relevance": 0.96,
+      "avg_retrieval_latency_ms": 1192.97,
+      "avg_total_latency_ms": 13499.55
+    }
+  },
+  "logs": [
+    {
+      "query_id": "tc_01_factoid",
+      "query": "What is Lynch syndrome and how is it inherited?",
+      "strategy": "dense",
+      "hit": true,
+      "mrr": 1.0,
+      "precision": 1.0,
+      "faithfulness": 0.95,
+      "relevance": 0.95,
+      "retrieval_ms": 39.04,
+      "total_ms": 15834.06
+    },
+    {
+      "query_id": "tc_01_factoid",
+      "query": "What is Lynch syndrome and how is it inherited?",
+      "strategy": "sparse",
+      "hit": true,
+      "mrr": 1.0,
+      "precision": 1.0,
+      "faithfulness": 0.95,
+      "relevance": 0.95,
+      "retrieval_ms": 1.0,
+      "total_ms": 15864.21
+    },
+    {
+      "query_id": "tc_01_factoid",
+      "query": "What is Lynch syndrome and how is it inherited?",
+      "strategy": "hybrid",
+      "hit": true,
+      "mrr": 1.0,
+      "precision": 1.0,
+      "faithfulness": 0.95,
+      "relevance": 0.95,
+      "retrieval_ms": 1.05,
+      "total_ms": 15703.1
+    },
+    {
+      "query_id": "tc_01_factoid",
+      "query": "What is Lynch syndrome and how is it inherited?",
+      "strategy": "hybrid_multiquery",
+      "hit": true,
+      "mrr": 1.0,
+      "precision": 1.0,
+      "faithfulness": 0.95,
+      "relevance": 0.95,
+      "retrieval_ms": 920.81,
+      "total_ms": 16250.47
+    },
+    {
+      "query_id": "tc_02_specific_genes",
+      "query": "Which mismatch repair genes are associated with Lynch syndrome?",
+      "strategy": "dense",
+      "hit": true,
+      "mrr": 1.0,
+      "precision": 0.33,
+      "faithfulness": 0.95,
+      "relevance": 0.95,
+      "retrieval_ms": 0.0,
+      "total_ms": 15633.25
+    },
+    {
+      "query_id": "tc_02_specific_genes",
+      "query": "Which mismatch repair genes are associated with Lynch syndrome?",
+      "strategy": "sparse",
+      "hit": true,
+      "mrr": 1.0,
+      "precision": 0.33,
+      "faithfulness": 0.95,
+      "relevance": 0.95,
+      "retrieval_ms": 0.0,
+      "total_ms": 15628.75
+    },
+    {
+      "query_id": "tc_02_specific_genes",
+      "query": "Which mismatch repair genes are associated with Lynch syndrome?",
+      "strategy": "hybrid",
+      "hit": true,
+      "mrr": 1.0,
+      "precision": 0.33,
+      "faithfulness": 0.95,
+      "relevance": 0.95,
+      "retrieval_ms": 1.0,
+      "total_ms": 15586.48
+    },
+    {
+      "query_id": "tc_02_specific_genes",
+      "query": "Which mismatch repair genes are associated with Lynch syndrome?",
+      "strategy": "hybrid_multiquery",
+      "hit": true,
+      "mrr": 1.0,
+      "precision": 0.5,
+      "faithfulness": 0.95,
+      "relevance": 0.95,
+      "retrieval_ms": 642.84,
+      "total_ms": 16137.06
+    },
+    {
+      "query_id": "tc_03_cancer_risks",
+      "query": "What types of cancers are individuals with Lynch syndrome at high risk for developing?",
+      "strategy": "dense",
+      "hit": true,
+      "mrr": 1.0,
+      "precision": 1.0,
+      "faithfulness": 0.95,
+      "relevance": 0.95,
+      "retrieval_ms": 0.0,
+      "total_ms": 15445.18
+    },
+    {
+      "query_id": "tc_03_cancer_risks",
+      "query": "What types of cancers are individuals with Lynch syndrome at high risk for developing?",
+      "strategy": "sparse",
+      "hit": true,
+      "mrr": 1.0,
+      "precision": 1.0,
+      "faithfulness": 0.95,
+      "relevance": 0.95,
+      "retrieval_ms": 0.0,
+      "total_ms": 15534.27
+    },
+    {
+      "query_id": "tc_03_cancer_risks",
+      "query": "What types of cancers are individuals with Lynch syndrome at high risk for developing?",
+      "strategy": "hybrid",
+      "hit": true,
+      "mrr": 1.0,
+      "precision": 1.0,
+      "faithfulness": 0.95,
+      "relevance": 0.95,
+      "retrieval_ms": 0.0,
+      "total_ms": 15563.07
+    },
+    {
+      "query_id": "tc_03_cancer_risks",
+      "query": "What types of cancers are individuals with Lynch syndrome at high risk for developing?",
+      "strategy": "hybrid_multiquery",
+      "hit": true,
+      "mrr": 1.0,
+      "precision": 1.0,
+      "faithfulness": 0.95,
+      "relevance": 0.95,
+      "retrieval_ms": 1336.25,
+      "total_ms": 16690.41
+    },
+    {
+      "query_id": "tc_04_surveillance",
+      "query": "What clinical surveillance or management is recommended for Lynch syndrome patients?",
+      "strategy": "dense",
+      "hit": true,
+      "mrr": 0.3333333333333333,
+      "precision": 0.33,
+      "faithfulness": 0.95,
+      "relevance": 0.95,
+      "retrieval_ms": 0.0,
+      "total_ms": 16203.78
+    },
+    {
+      "query_id": "tc_04_surveillance",
+      "query": "What clinical surveillance or management is recommended for Lynch syndrome patients?",
+      "strategy": "sparse",
+      "hit": true,
+      "mrr": 0.5,
+      "precision": 0.33,
+      "faithfulness": 0.95,
+      "relevance": 0.95,
+      "retrieval_ms": 0.0,
+      "total_ms": 15648.3
+    },
+    {
+      "query_id": "tc_04_surveillance",
+      "query": "What clinical surveillance or management is recommended for Lynch syndrome patients?",
+      "strategy": "hybrid",
+      "hit": true,
+      "mrr": 0.3333333333333333,
+      "precision": 0.33,
+      "faithfulness": 0.95,
+      "relevance": 0.95,
+      "retrieval_ms": 2.38,
+      "total_ms": 15595.46
+    },
+    {
+      "query_id": "tc_04_surveillance",
+      "query": "What clinical surveillance or management is recommended for Lynch syndrome patients?",
+      "strategy": "hybrid_multiquery",
+      "hit": false,
+      "mrr": 0.0,
+      "precision": 0.0,
+      "faithfulness": 0.95,
+      "relevance": 0.95,
+      "retrieval_ms": 1120.7,
+      "total_ms": 16475.55
+    },
+    {
+      "query_id": "tc_05_negative_rejection",
+      "query": "What are the rules for landing a lunar rover on the surface of Mars?",
+      "strategy": "dense",
+      "hit": false,
+      "mrr": 0.0,
+      "precision": 0.0,
+      "faithfulness": 1.0,
+      "relevance": 1.0,
+      "retrieval_ms": 0.0,
+      "total_ms": 1.0
+    },
+    {
+      "query_id": "tc_05_negative_rejection",
+      "query": "What are the rules for landing a lunar rover on the surface of Mars?",
+      "strategy": "sparse",
+      "hit": false,
+      "mrr": 0.0,
+      "precision": 0.0,
+      "faithfulness": 1.0,
+      "relevance": 1.0,
+      "retrieval_ms": 0.0,
+      "total_ms": 0.0
+    },
+    {
+      "query_id": "tc_05_negative_rejection",
+      "query": "What are the rules for landing a lunar rover on the surface of Mars?",
+      "strategy": "hybrid",
+      "hit": false,
+      "mrr": 0.0,
+      "precision": 0.0,
+      "faithfulness": 1.0,
+      "relevance": 1.0,
+      "retrieval_ms": 0.0,
+      "total_ms": 0.0
+    },
+    {
+      "query_id": "tc_05_negative_rejection",
+      "query": "What are the rules for landing a lunar rover on the surface of Mars?",
+      "strategy": "hybrid_multiquery",
+      "hit": false,
+      "mrr": 0.0,
+      "precision": 0.0,
+      "faithfulness": 1.0,
+      "relevance": 1.0,
+      "retrieval_ms": 1944.25,
+      "total_ms": 1944.25
+    }
+  ]
+}

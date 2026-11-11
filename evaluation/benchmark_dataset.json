@@ -1,0 +1,47 @@
+{
+  "description": "PDF Brainbox Golden Evaluation Benchmark Dataset for RAG Validation",
+  "version": "1.0.0",
+  "test_cases": [
+    {
+      "id": "tc_01_factoid",
+      "query": "What is Lynch syndrome and how is it inherited?",
+      "expected_keywords": ["autosomal dominant", "inherited", "cancer", "hnpcc", "mismatch repair"],
+      "ground_truth": "Lynch syndrome (hereditary non-polyposis colorectal cancer or HNPCC) is an autosomal dominant inherited cancer predisposition syndrome caused by mutations in DNA mismatch repair genes.",
+      "category": "factoid_clinical",
+      "difficulty": "medium"
+    },
+    {
+      "id": "tc_02_specific_genes",
+      "query": "Which mismatch repair genes are associated with Lynch syndrome?",
+      "expected_keywords": ["mlh1", "msh2", "msh6", "pms2", "epcam"],
+      "ground_truth": "The mismatch repair genes associated with Lynch syndrome are MLH1, MSH2, MSH6, PMS2, and EPCAM deletions.",
+      "category": "keyword_entity",
+      "difficulty": "hard"
+    },
+    {
+      "id": "tc_03_cancer_risks",
+      "query": "What types of cancers are individuals with Lynch syndrome at high risk for developing?",
+      "expected_keywords": ["colorectal", "endometrial", "ovarian", "gastric", "bowel"],
+      "ground_truth": "Individuals with Lynch syndrome have a significantly increased lifetime risk of developing colorectal and endometrial cancer, as well as ovarian, gastric, and other gastrointestinal tract cancers.",
+      "category": "multi_hop_recall",
+      "difficulty": "medium"
+    },
+    {
+      "id": "tc_04_surveillance",
+      "query": "What clinical surveillance or management is recommended for Lynch syndrome patients?",
+      "expected_keywords": ["colonoscopy", "surveillance", "screening", "aspirin", "hysterectomy"],
+      "ground_truth": "Management guidelines recommend regular high-quality colonoscopy surveillance every 18-24 months starting from age 25 or 35 depending on the specific gene mutation, daily aspirin chemoprevention, and risk-reducing gynecological surgery.",
+      "category": "conceptual_summary",
+      "difficulty": "hard"
+    },
+    {
+      "id": "tc_05_negative_rejection",
+      "query": "What are the rules for landing a lunar rover on the surface of Mars?",
+      "expected_keywords": ["not mentioned", "no information", "cannot be determined", "does not contain"],
+      "ground_truth": "I do not have sufficient information in the provided document to answer this question as the document focuses on genomics and Lynch syndrome.",
+      "category": "out_of_domain_negative",
+      "difficulty": "guardrail"
+    }
+  ]
+}
+

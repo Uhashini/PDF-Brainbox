@@ -13,3 +13,8 @@ pyrebase4
 firebase-admin
 oauth2client
 rank_bm25
+pytest
+# Optional LLM Evaluation & Tracing (Ragas, DeepEval, LangSmith)
+# ragas
+# deepeval
+# langsmith
