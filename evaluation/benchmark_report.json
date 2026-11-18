@@ -2,39 +2,39 @@
   "summary": {
     "dense": {
       "hit_rate_at_3": 0.8,
-      "mrr": 0.667,
+      "mrr": 0.567,
       "avg_context_precision": 0.532,
-      "avg_faithfulness": 0.96,
-      "avg_answer_relevance": 0.96,
-      "avg_retrieval_latency_ms": 7.81,
-      "avg_total_latency_ms": 12623.45
+      "avg_faithfulness": 0.924,
+      "avg_answer_relevance": 0.956,
+      "avg_retrieval_latency_ms": 1.93,
+      "avg_total_latency_ms": 2.13
     },
     "sparse": {
       "hit_rate_at_3": 0.8,
       "mrr": 0.7,
       "avg_context_precision": 0.532,
-      "avg_faithfulness": 0.96,
-      "avg_answer_relevance": 0.96,
-      "avg_retrieval_latency_ms": 0.2,
-      "avg_total_latency_ms": 12535.11
+      "avg_faithfulness": 0.924,
+      "avg_answer_relevance": 0.956,
+      "avg_retrieval_latency_ms": 0.0,
+      "avg_total_latency_ms": 0.0
     },
     "hybrid": {
       "hit_rate_at_3": 0.8,
-      "mrr": 0.667,
-      "avg_context_precision": 0.532,
-      "avg_faithfulness": 0.96,
-      "avg_answer_relevance": 0.96,
-      "avg_retrieval_latency_ms": 0.89,
-      "avg_total_latency_ms": 12489.62
+      "mrr": 0.567,
+      "avg_context_precision": 0.466,
+      "avg_faithfulness": 0.914,
+      "avg_answer_relevance": 0.956,
+      "avg_retrieval_latency_ms": 0.2,
+      "avg_total_latency_ms": 0.2
     },
     "hybrid_multiquery": {
       "hit_rate_at_3": 0.6,
-      "mrr": 0.6,
+      "mrr": 0.5,
       "avg_context_precision": 0.5,
-      "avg_faithfulness": 0.96,
-      "avg_answer_relevance": 0.96,
-      "avg_retrieval_latency_ms": 1192.97,
-      "avg_total_latency_ms": 13499.55
+      "avg_faithfulness": 0.892,
+      "avg_answer_relevance": 0.906,
+      "avg_retrieval_latency_ms": 0.6,
+      "avg_total_latency_ms": 0.6
     }
   },
   "logs": [
@@ -45,10 +45,9 @@
       "hit": true,
       "mrr": 1.0,
       "precision": 1.0,
-      "faithfulness": 0.95,
+      "faithfulness": 1.0,
       "relevance": 0.95,
-      "retrieval_ms": 39.04,
-      "total_ms": 15834.06
+      "retrieval_ms": 8.63
     },
     {
       "query_id": "tc_01_factoid",
@@ -57,10 +56,9 @@
       "hit": true,
       "mrr": 1.0,
       "precision": 1.0,
-      "faithfulness": 0.95,
+      "faithfulness": 1.0,
       "relevance": 0.95,
-      "retrieval_ms": 1.0,
-      "total_ms": 15864.21
+      "retrieval_ms": 0.0
     },
     {
       "query_id": "tc_01_factoid",
@@ -69,10 +67,9 @@
       "hit": true,
       "mrr": 1.0,
       "precision": 1.0,
-      "faithfulness": 0.95,
+      "faithfulness": 1.0,
       "relevance": 0.95,
-      "retrieval_ms": 1.05,
-      "total_ms": 15703.1
+      "retrieval_ms": 1.0
     },
     {
       "query_id": "tc_01_factoid",
@@ -81,22 +78,20 @@
       "hit": true,
       "mrr": 1.0,
       "precision": 1.0,
-      "faithfulness": 0.95,
+      "faithfulness": 1.0,
       "relevance": 0.95,
-      "retrieval_ms": 920.81,
-      "total_ms": 16250.47
+      "retrieval_ms": 0.0
     },
     {
       "query_id": "tc_02_specific_genes",
       "query": "Which mismatch repair genes are associated with Lynch syndrome?",
       "strategy": "dense",
       "hit": true,
-      "mrr": 1.0,
+      "mrr": 0.5,
       "precision": 0.33,
-      "faithfulness": 0.95,
+      "faithfulness": 0.97,
       "relevance": 0.95,
-      "retrieval_ms": 0.0,
-      "total_ms": 15633.25
+      "retrieval_ms": 0.0
     },
     {
       "query_id": "tc_02_specific_genes",
@@ -105,34 +100,31 @@
       "hit": true,
       "mrr": 1.0,
       "precision": 0.33,
-      "faithfulness": 0.95,
+      "faithfulness": 0.97,
       "relevance": 0.95,
-      "retrieval_ms": 0.0,
-      "total_ms": 15628.75
+      "retrieval_ms": 0.0
     },
     {
       "query_id": "tc_02_specific_genes",
       "query": "Which mismatch repair genes are associated with Lynch syndrome?",
       "strategy": "hybrid",
       "hit": true,
-      "mrr": 1.0,
+      "mrr": 0.5,
       "precision": 0.33,
-      "faithfulness": 0.95,
+      "faithfulness": 0.97,
       "relevance": 0.95,
-      "retrieval_ms": 1.0,
-      "total_ms": 15586.48
+      "retrieval_ms": 0.0
     },
     {
       "query_id": "tc_02_specific_genes",
       "query": "Which mismatch repair genes are associated with Lynch syndrome?",
       "strategy": "hybrid_multiquery",
       "hit": true,
-      "mrr": 1.0,
+      "mrr": 0.5,
       "precision": 0.5,
-      "faithfulness": 0.95,
+      "faithfulness": 0.86,
       "relevance": 0.95,
-      "retrieval_ms": 642.84,
-      "total_ms": 16137.06
+      "retrieval_ms": 0.0
     },
     {
       "query_id": "tc_03_cancer_risks",
@@ -141,10 +133,9 @@
       "hit": true,
       "mrr": 1.0,
       "precision": 1.0,
-      "faithfulness": 0.95,
+      "faithfulness": 1.0,
       "relevance": 0.95,
-      "retrieval_ms": 0.0,
-      "total_ms": 15445.18
+      "retrieval_ms": 1.0
     },
     {
       "query_id": "tc_03_cancer_risks",
@@ -153,10 +144,9 @@
       "hit": true,
       "mrr": 1.0,
       "precision": 1.0,
-      "faithfulness": 0.95,
+      "faithfulness": 1.0,
       "relevance": 0.95,
-      "retrieval_ms": 0.0,
-      "total_ms": 15534.27
+      "retrieval_ms": 0.0
     },
     {
       "query_id": "tc_03_cancer_risks",
@@ -164,11 +154,10 @@
       "strategy": "hybrid",
       "hit": true,
       "mrr": 1.0,
-      "precision": 1.0,
+      "precision": 0.67,
       "faithfulness": 0.95,
       "relevance": 0.95,
-      "retrieval_ms": 0.0,
-      "total_ms": 15563.07
+      "retrieval_ms": 0.0
     },
     {
       "query_id": "tc_03_cancer_risks",
@@ -179,8 +168,7 @@
       "precision": 1.0,
       "faithfulness": 0.95,
       "relevance": 0.95,
-      "retrieval_ms": 1336.25,
-      "total_ms": 16690.41
+      "retrieval_ms": 1.0
     },
     {
       "query_id": "tc_04_surveillance",
@@ -189,10 +177,9 @@
       "hit": true,
       "mrr": 0.3333333333333333,
       "precision": 0.33,
-      "faithfulness": 0.95,
+      "faithfulness": 0.65,
       "relevance": 0.95,
-      "retrieval_ms": 0.0,
-      "total_ms": 16203.78
+      "retrieval_ms": 0.0
     },
     {
       "query_id": "tc_04_surveillance",
@@ -201,10 +188,9 @@
       "hit": true,
       "mrr": 0.5,
       "precision": 0.33,
-      "faithfulness": 0.95,
+      "faithfulness": 0.65,
       "relevance": 0.95,
-      "retrieval_ms": 0.0,
-      "total_ms": 15648.3
+      "retrieval_ms": 0.0
     },
     {
       "query_id": "tc_04_surveillance",
@@ -213,10 +199,9 @@
       "hit": true,
       "mrr": 0.3333333333333333,
       "precision": 0.33,
-      "faithfulness": 0.95,
+      "faithfulness": 0.65,
       "relevance": 0.95,
-      "retrieval_ms": 2.38,
-      "total_ms": 15595.46
+      "retrieval_ms": 0.0
     },
     {
       "query_id": "tc_04_surveillance",
@@ -225,10 +210,9 @@
       "hit": false,
       "mrr": 0.0,
       "precision": 0.0,
-      "faithfulness": 0.95,
-      "relevance": 0.95,
-      "retrieval_ms": 1120.7,
-      "total_ms": 16475.55
+      "faithfulness": 0.65,
+      "relevance": 0.7,
+      "retrieval_ms": 1.0
     },
     {
       "query_id": "tc_05_negative_rejection",
@@ -238,9 +222,8 @@
       "mrr": 0.0,
       "precision": 0.0,
       "faithfulness": 1.0,
-      "relevance": 1.0,
-      "retrieval_ms": 0.0,
-      "total_ms": 1.0
+      "relevance": 0.98,
+      "retrieval_ms": 0.0
     },
     {
       "query_id": "tc_05_negative_rejection",
@@ -250,9 +233,8 @@
       "mrr": 0.0,
       "precision": 0.0,
       "faithfulness": 1.0,
-      "relevance": 1.0,
-      "retrieval_ms": 0.0,
-      "total_ms": 0.0
+      "relevance": 0.98,
+      "retrieval_ms": 0.0
     },
     {
       "query_id": "tc_05_negative_rejection",
@@ -262,9 +244,8 @@
       "mrr": 0.0,
       "precision": 0.0,
       "faithfulness": 1.0,
-      "relevance": 1.0,
-      "retrieval_ms": 0.0,
-      "total_ms": 0.0
+      "relevance": 0.98,
+      "retrieval_ms": 0.0
     },
     {
       "query_id": "tc_05_negative_rejection",
@@ -274,9 +255,8 @@
       "mrr": 0.0,
       "precision": 0.0,
       "faithfulness": 1.0,
-      "relevance": 1.0,
-      "retrieval_ms": 1944.25,
-      "total_ms": 1944.25
+      "relevance": 0.98,
+      "retrieval_ms": 1.0
     }
   ]
 }

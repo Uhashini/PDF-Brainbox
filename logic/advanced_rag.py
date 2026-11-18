@@ -3,6 +3,7 @@ import json
 import re
 import time
 from rank_bm25 import BM25Okapi
+from logic.tracing import trace_step
 
 def safe_parse_json(text_content):
     if not isinstance(text_content, str):
@@ -58,6 +59,7 @@ class HybridRetriever:
         tokenized_corpus = [chunk.lower().split() for chunk in chunks]
         self.bm25 = BM25Okapi(tokenized_corpus)
 
+    @trace_step(name="hybrid_search", run_type="retriever")
     def search(self, query, query_embedding, top_k=3, mode="hybrid"):
         if not self.chunks:
             return []

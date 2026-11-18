@@ -43,6 +43,19 @@ try:
 except Exception as e:
         db_firestore = None
 
+# Configure LangSmith Cloud Tracing if secrets are present
+try:
+    if "LANGSMITH_API_KEY" in st.secrets:
+        os.environ["LANGSMITH_API_KEY"] = st.secrets["LANGSMITH_API_KEY"]
+        os.environ["LANGCHAIN_TRACING_V2"] = "true"
+        os.environ["LANGCHAIN_PROJECT"] = st.secrets.get("LANGCHAIN_PROJECT", "pdf-brainbox")
+    elif "LANGCHAIN_API_KEY" in st.secrets:
+        os.environ["LANGSMITH_API_KEY"] = st.secrets["LANGCHAIN_API_KEY"]
+        os.environ["LANGCHAIN_TRACING_V2"] = "true"
+        os.environ["LANGCHAIN_PROJECT"] = st.secrets.get("LANGCHAIN_PROJECT", "pdf-brainbox")
+except Exception:
+    pass
+
 st.set_page_config(
     page_title="PDF Brainbox - Advanced RAG & AI Analytics",      
     page_icon="logo.png",           

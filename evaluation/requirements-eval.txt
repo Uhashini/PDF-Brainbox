@@ -1,0 +1,3 @@
+# CI/CD & Heavy Evaluation Dependencies (Used by GitHub Actions runners, NOT Streamlit Cloud)
+pytest
+deepeval

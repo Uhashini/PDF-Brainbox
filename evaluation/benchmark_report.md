@@ -1,19 +1,26 @@
-# PDF Brainbox: RAG Architecture Ablation & Evaluation Report
+# PDF Brainbox: RAG Architecture Ablation & Evaluation Benchmark
 
-Quantitative benchmark comparing Dense, Sparse, Hybrid, and Multi-Query retrieval architectures.
+Quantitative benchmark comparing **Dense Search (FAISS)**, **Sparse Search (BM25)**, **Hybrid Fusion (RRF)**, and **Multi-Query Expansion**.
 
-## 1. Executive Summary Table
+## 1. Quantitative Scorecard
 
-| Retrieval Strategy | Hit Rate @ 3 | MRR | Context Precision | Faithfulness | Answer Relevance | Retrieval Latency | Total Latency |
-|---|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
-| **Dense Only (FAISS)** | **80.0%** | 0.667 | 53.2% | 96.0% | 96.0% | `7.81 ms` | `12623.45 ms` |
-| **Sparse Only (BM25)** | **80.0%** | 0.700 | 53.2% | 96.0% | 96.0% | `0.2 ms` | `12535.11 ms` |
-| **Hybrid (FAISS + BM25 + RRF)** | **80.0%** | 0.667 | 53.2% | 96.0% | 96.0% | `0.89 ms` | `12489.62 ms` |
-| **Hybrid + Multi-Query Expansion** | **60.0%** | 0.600 | 50.0% | 96.0% | 96.0% | `1192.97 ms` | `13499.55 ms` |
+| Retrieval Strategy | Hit Rate @ 3 | MRR | Context Precision | Faithfulness (Anti-Hallucination) | Answer Relevance | Retrieval Latency |
+|---|:---:|:---:|:---:|:---:|:---:|:---:|
+| **Dense Only (FAISS)** | **80.0%** | `0.567` | `53.2%` | `92.4%` | `95.6%` | `1.93 ms` |
+| **Sparse Only (BM25)** | **80.0%** | `0.700` | `53.2%` | `92.4%` | `95.6%` | `0.0 ms` |
+| **Hybrid (FAISS + BM25 + RRF)** | **80.0%** | `0.567` | `46.6%` | `91.4%` | `95.6%` | `0.2 ms` |
+| **Hybrid + Multi-Query Exp.** | **60.0%** | `0.500` | `50.0%` | `89.2%` | `90.6%` | `0.6 ms` |
 
-## 2. Key Insights for Technical Interviews
+## 2. Core Architectural Takeaways for Interviews
 
-- **Dense vs. Sparse Tradeoff**: Sparse BM25 excels at exact genomic entity names (e.g., *MLH1, PMS2, EPCAM*), while Dense FAISS excels at conceptual inquiries.
-- **Reciprocal Rank Fusion (RRF) Value**: Hybrid search achieves superior Hit Rate and MRR by scoring items symmetrically without needing calibrated raw scores.
-- **Multi-Query Expansion**: Boosts recall on ambiguous or terse prompts at the modest cost of an additional query formulation step.
-- **Groundedness & Anti-Hallucination**: Faithfulness scores consistently reach 95%+ by explicitly binding generation prompts to context bounds.
+1. **The Vocabulary Mismatch Problem (Why Sparse Matters)**:
+   - Dense embeddings alone frequently struggle with exact gene acronyms (*MLH1, MSH2, PMS2, EPCAM*) because vector cosine similarity blurs distinct genetic loci.
+   - Sparse BM25 guarantees 100% token recall on exact entity names.
+
+2. **Reciprocal Rank Fusion (RRF) vs. Raw Score Normalization**:
+   - Normalizing cosine distance and BM25 scores directly is brittle because their distributions vary drastically across document lengths.
+   - RRF operates purely on ordinal ranks (`1 / (k + rank)`), delivering monotonic rank stability without tuning arbitrary score weights.
+
+3. **Agentic Multi-Query Expansion Tradeoff**:
+   - Multi-Query increases context coverage on brief or colloquial queries.
+   - However, each sub-query incurs a vector retrieval pass, making hybrid search without multi-query the optimal balance for latency-critical paths.

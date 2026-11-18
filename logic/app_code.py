@@ -2,18 +2,21 @@ from mistralai import Mistral
 from PyPDF2 import PdfReader
 from pptx import Presentation
 from pptx.util import Inches
+from logic.tracing import trace_step
 
 api_key = "Y70bo7Bnkil7MgiZ3VdOdWwH3edP9UK4"
 embed_model = "mistral-embed"
 chat_model = "mistral-small-latest"
 client = Mistral(api_key=api_key)
 
+@trace_step(name="mistral_embed", run_type="embedding")
 def get_text_embedding(txt):
     response = client.embeddings.create(model=embed_model, inputs=[txt])
     return response.data[0].embedding
 
 
 # Chat function with mistral
+@trace_step(name="mistral_chat", run_type="llm")
 def mistral_chat(user_message, is_json=False):
     messages = [{"role": "user", "content": user_message}]
     if is_json:
